@@ -1,0 +1,14 @@
+FROM node:10.3.0
+
+RUN yarn global add \
+          --global-folder /usr/local/share \
+          ethereumjs-testrpc \
+          truffle@4.1.13 \
+          truffle-flattener \
+          truffle-hdwallet-provider@0.0.3 \
+          ethereumjs-wallet@0.6.0 \
+          solium \
+	  jshint
+
+VOLUME /app
+WORKDIR /app

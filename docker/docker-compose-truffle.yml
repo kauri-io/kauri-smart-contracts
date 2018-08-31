@@ -1,0 +1,13 @@
+version: '3'
+services:
+  truffle3:
+    build:
+      context: .
+      dockerfile: Dockerfile.truffle-build
+    command: bash
+    stdin_open: true
+    tty: true
+    ports:
+      - "7001:8080"
+    volumes:
+      - ../:/app

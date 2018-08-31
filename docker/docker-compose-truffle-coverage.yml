@@ -1,0 +1,13 @@
+version: '3'
+services:
+  truffle-coverage:
+    build:
+      context: .
+      dockerfile: Dockerfile.truffle-coverage
+    command: bash
+    stdin_open: true
+    tty: true
+    ports:
+      - "7002:8080"
+    volumes:
+      - ../:/app

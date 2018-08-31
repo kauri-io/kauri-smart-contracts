@@ -1,0 +1,3 @@
+[submodule "kauri-ops"]
+	path = kauri-ops
+	url = https://github.com/ConsenSys/kauri-ops.git

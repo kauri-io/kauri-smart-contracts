@@ -1,0 +1,23 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.org/websocket-services: "web3-auth"
+    ingress.kubernetes.io/ssl-redirect: "false"
+    kubernetes.io/tls-acme: "true"
+  name: contracts-server-ingress
+  namespace: uat
+spec:
+  tls:
+  - hosts:
+    - api.beta.kauri.io
+    secretName: uat-contracts-server-tls
+  rules:
+    - host: api.beta.kauri.io
+      http:
+        paths:
+          - backend:
+              serviceName: contracts-server
+              servicePort: 8888
+            path: /api

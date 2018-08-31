@@ -1,0 +1,151 @@
+language: node
+sudo: false
+services:
+- docker
+branches:
+  only:
+  - master
+  - development
+  - dev2
+cache:
+  directories:
+  - "$HOME/google-cloud-sdk/"
+before_install:
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then openssl aes-256-cbc -K $encrypted_57c9ae68dfc1_key -iv $encrypted_57c9ae68dfc1_iv
+  -in credentials.tar.gz.enc -out credentials.tar.gz -d; fi
+- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+- sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu
+  $(lsb_release -cs) stable"
+- sudo apt-get update
+- sudo apt-get -yq --force-yes -o Dpkg::Options::="--force-confold" install docker-ce
+- export COMMITTER_EMAIL="$(git log -1 $TRAVIS_COMMIT --pretty="%cE")"
+- export AUTHOR_NAME="$(git log -1 $TRAVIS_COMMIT --pretty="%aN")"
+- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
+  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+- source /home/travis/google-cloud-sdk/path.bash.inc
+- gcloud --quiet version
+- gcloud --quiet components update
+- gcloud --quiet components update kubectl
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
+- mkdir -p lib
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
+  --key-file client-secret.json; fi
+after_install:
+- docker kill $(docker ps -q)
+jobs:
+  include:
+  - stage: solidity-tests
+    install:
+    - docker-compose -f docker/docker-compose-truffle-test.yml build
+    - docker-compose -f docker/docker-compose-truffle-test.yml up -d
+    - docker-compose -f docker/docker-compose-truffle-coverage.yml build
+    - docker-compose -f docker/docker-compose-truffle-coverage.yml up -d
+    - docker ps
+    - docker exec -it docker_truffle-test_1 npm install
+    script:
+    - travis/runTests.sh
+    #after_success:
+    #- rm -rf node_modules
+    #- docker exec -it docker_truffle-coverage_1 npm install
+    #- travis/runCoverage.sh
+    #- docker exec -it docker_truffle-coverage_1 cat coverage/lcov.info | coveralls
+    #notofications:
+    #  webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN
+  - stage: git-tag
+    if: "(NOT type IN (pull_request) AND (branch = master))"
+    install:
+    - chmod 600 github_deploy_key
+    - eval $(ssh-agent -s)
+    - ssh-add github_deploy_key
+    - ssh-add -l
+    - git remote set-url origin git@github.com:ConsenSys/kauri-frontend.git
+    - git remote -v
+    - git fetch origin 'refs/tags/*:refs/tags/*'
+    script:
+    - SMART_CONTRACT_VERSION=$(npm version | grep kauri-smart-contracts | head -1
+      | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
+    - bash kauri-ops/versioning/gittag.sh $SMART_CONTRACT_VERSION
+    - NEW_DEV_VERSION=$(kauri-ops/versioning/get-next-dev-ver.sh)
+    - echo $NEW_DEV_VERSION
+    - git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+    - git fetch --all
+    - git checkout development
+    - cd ..
+    - npm version $NEW_DEV_VERSION --no-git-tag-version
+    - git add .
+    - git commit -m "Travis build $TRAVIS_BUILD_NUMBER updating version after tag"
+    - git push origin development
+  - stage: deploy-uat
+    if: "(NOT type IN (pull_request) AND (branch = master))"
+    install:
+    - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V --quiet
+    - cd kauri-ops
+    - source env_setup.sh --config-file config/config-uat.json
+    - cd ..
+    - gcloud config set project $GOOGLE_PROJECT_ID
+    - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
+    - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
+    - mv secrets.json smart-contracts/.
+    - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+    - docker-compose -f docker/docker-compose-truffle-build.yml build
+    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
+    - docker ps
+    - docker exec -it docker_truffle-build_1 npm install
+    script:
+    - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
+      | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
+    - echo $SMART_CONTRACTS_VERSION
+    - bash ./k8s/run_migrations.sh
+    - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION
+    - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
+    - kubectl delete pods -l app=web3-auth
+    - kubectl delete pods -l app=monolith
+  - stage: deploy-dev2
+    if: "(NOT type IN (pull_request) AND (branch = dev2))"
+    install:
+    - cd kauri-ops
+    - source env_setup.sh --config-file config/config-dev2.json
+    - cd ..
+    - gcloud config set project $GOOGLE_PROJECT_ID
+    - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
+    - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
+    - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+    - docker-compose -f docker/docker-compose-truffle-build.yml build
+    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
+    - docker ps
+    - docker exec -it docker_truffle-build_1 npm install
+    script:
+    - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
+      | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
+    - echo $SMART_CONTRACTS_VERSION
+    - bash ./k8s/run_migrations.sh
+    - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
+    - bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
+    # Restart middleware pods
+    - kubectl delete pods -l app=web3-auth
+    - kubectl delete pods -l app=monolith
+  - stage: deploy-dev
+    if: "(NOT env(AUTHOR_NAME) =~ ^Travis AND (NOT type IN (pull_request)) AND (branch
+      = development))"
+    install:
+    - cd kauri-ops
+    - source env_setup.sh --config-file config/config-devgke.json
+    - cd ..
+    - gcloud config set project $GOOGLE_PROJECT_ID
+    - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
+    - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
+    - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+    - docker-compose -f docker/docker-compose-truffle-build.yml build
+    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
+    - docker ps
+    - docker exec -it docker_truffle-build_1 npm install
+    script:
+    - cd smart-contracts
+    - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
+      | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations.sh; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=web3-auth; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=monolith; fi
