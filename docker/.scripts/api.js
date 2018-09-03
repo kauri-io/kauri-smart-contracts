@@ -40,7 +40,7 @@ router.get('/:contractName/all', function(req, res) {
 
 
 // REGISTER OUR ROUTES -------------------------------
-app.use('/api', router);
+app.use('/smartcontract', router);
 
 
 // START THE SERVER

@@ -20,4 +20,4 @@ spec:
           - backend:
               serviceName: contracts-server
               servicePort: 8888
-            path: /api
+            path: /smartcontract
