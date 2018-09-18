@@ -117,15 +117,16 @@ async function addRequestAndFulfil(contract, accounts, submitterAddress, article
   return {tx: tx, checkpoint: checkpoint};
 }
 
-async function checkpointArticles(contract, accounts, articleId, creatorAddress, articleVersion) {
+async function checkpointArticles(contract, accounts, articleId, creatorAddress, articleVersion, sig) {
   if (!articleId) {articleId = ARTICLE_ID};
   if (!creatorAddress) {creatorAddress = accounts[2]};
   if (!articleVersion) {articleVersion = BASE_VERSION};
+  
   let article = {id: articleId, version: articleVersion, contentHash: SOLUTION_LOCATOR_HASH, creator: creatorAddress, timestamp: TIMESTAMP};
   let anotherArticle = {id: "6666", version: 2, contentHash: SOLUTION_LOCATOR_HASH, creator: accounts[3], timestamp: TIMESTAMP};
   let checkpointTree = checkpoint.createArticleCheckpointTree([article, anotherArticle]);
   let checkpointRoot = checkpointTree.getRootHex();
-  let sig = createCheckpointSignature(checkpointRoot, IPFS_HASH, accounts[8]);
+  if (!sig) {sig = createCheckpointSignature(checkpointRoot, IPFS_HASH, accounts[8])};
   await contract.checkpointArticles(checkpointRoot, IPFS_HASH, sig.v, sig.r, sig.s);
 
   return {tree: checkpointTree, proof: checkpoint.getProof(checkpointTree, article)};
@@ -361,6 +362,7 @@ Object.assign(exports, {
   redeployNoMocks,
   calculateDueDate,
   createApprovalSignature,
+  createCheckpointSignature,
   getRequestId,
   increaseTimeToPastPublicationPeriod,
   createCommunity,
@@ -379,5 +381,6 @@ Object.assign(exports, {
   SECONDS_IN_WEEK,
   MIN_DEADLINE,
   MAX_DEADLINE,
-  PUBLICATION_TIMEOUT
+  PUBLICATION_TIMEOUT,
+  TIMESTAMP
 });
