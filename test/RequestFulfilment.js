@@ -214,7 +214,7 @@ async function verifyFulfilledEvent(underTest, accounts, expectedVersion) {
   assert.equal(toAscii(logs[0].args.requestId), expectedRequestId, 'Request Id incorrect');
   assert.equal(toAscii(logs[0].args.articleId), core.ARTICLE_ID, 'Article Id incorrect');
   assert.equal(logs[0].args.creator, accounts[2]);
-  assert.equal(logs[0].args.contentHash, core.SOLUTION_LOCATOR_HASH, 'Content hash incorrect');
+  assert.equal(logs[0].args.contentHash, core.IPFS_HASH, 'Content hash incorrect');
   assert.equal(logs[0].args.moderator, accounts[9], 'Moderator incorrect');
   assert.equal(logs[0].args.articleVersion, expectedVersion, 'Version incorrect');
 }

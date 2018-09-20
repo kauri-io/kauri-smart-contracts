@@ -44,7 +44,7 @@ contract Checkpoint is KauriBase {
 
     function validateArticleProof(bytes32 _articleId,
                                   uint _articleVersion,
-                                  bytes32 _contentHash, 
+                                  string _contentHash,
                                   address _creatorAddress,
                                   uint _timestamp, 
                                   bytes32 _checkpointRoot,
