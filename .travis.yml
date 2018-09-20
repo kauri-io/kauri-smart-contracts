@@ -48,13 +48,11 @@ jobs:
     - docker exec -it docker_truffle-test_1 npm install
     script:
     - travis/runTests.sh
-    #after_success:
-    #- rm -rf node_modules
-    #- docker exec -it docker_truffle-coverage_1 npm install
-    #- travis/runCoverage.sh
-    #- docker exec -it docker_truffle-coverage_1 cat coverage/lcov.info | coveralls
-    #notofications:
-    #  webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN
+    after_success:
+    - rm -rf node_modules
+    - docker exec -it docker_truffle-coverage_1 npm install
+    - travis/runCoverage.sh
+    - cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - stage: git-tag
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
