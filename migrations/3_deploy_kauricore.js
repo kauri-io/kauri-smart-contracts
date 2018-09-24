@@ -51,7 +51,7 @@ module.exports = (deployer) => {
         })
         .then(() => {
           console.log("!!!!!!!UPDATE...Setting dummy checkpointer address on KauriCore...UPDATE!!!!!!!");
-          return deployedKauriCore.addCheckpointerAddress("0x838fC3c0413fB6b06Bb7541527518Ef94dC0F547");
+          return deployedKauriCore.addCheckpointerAddress("0x00a329c0648769a73afac7f9381e08fb43dbea72");
         })
     })
     .then(() => {

@@ -9,7 +9,7 @@ contract('Articles', function(accounts) {
 
   it('should allow anyone to tip a article once a article has been accepted', core.redeploy(accounts, async (underTest) => {
     let returned = await core.addRequestAndFulfil(underTest, accounts);
-    //await core.tipArticle(underTest, accounts, returned.checkpoint);
+    await core.tipArticle(underTest, accounts, returned.checkpoint);
   }));
 
   it('should fire a ArticleTipped event once a article has been tipped', core.redeploy(accounts, async (underTest) => {

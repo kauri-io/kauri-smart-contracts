@@ -21,8 +21,8 @@ contract('Checkpoint', function(accounts) {
   }));
 
   it('should not allow a checkpoint to be added if sig doesnt match checkpoint account', core.redeploy(accounts, async (underTest) => {
-    let article = {id: core.ARTICLE_ID, version: 1, contentHash: core.SOLUTION_LOCATOR_HASH, creator: accounts[2], timestamp: core.TIMESTAMP};
-    let anotherArticle = {id: "6666", version: 2, contentHash: core.SOLUTION_LOCATOR_HASH, creator: accounts[3], timestamp: core.TIMESTAMP};
+    let article = {id: core.ARTICLE_ID, version: 1, contentHash: core.IPFS_HASH, creator: accounts[2], timestamp: core.TIMESTAMP};
+    let anotherArticle = {id: "6666", version: 2, contentHash: core.ANOTHER_IPFS_HASH, creator: accounts[3], timestamp: core.TIMESTAMP};
     let checkpointTree = checkpoint.createArticleCheckpointTree([article, anotherArticle]);
     let checkpointRoot = checkpointTree.getRootHex();
 
@@ -33,42 +33,42 @@ contract('Checkpoint', function(accounts) {
 
   it('should not revert a valid, checkpointed article', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await underTest.validateArticleProof(core.ARTICLE_ID, 1, core.SOLUTION_LOCATOR_HASH, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof);
+    await underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof);
   }));
 
   it('should revert if checkpoint hash is invalid', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.SOLUTION_LOCATOR_HASH, accounts[2], core.TIMESTAMP, web3.sha3('invalid'), checkpoint.proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP, web3.sha3('invalid'), checkpoint.proof),
         'validateArticleProof did not revert with incorrect checkpoint');
   }));
 
   it('should revert if article id is incorrect', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID + 1, 1, core.SOLUTION_LOCATOR_HASH, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID + 1, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
         'validateArticleProof did not revert with incorrect article id');
   }));
 
   it('should revert if article version is incorrect', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 2, core.SOLUTION_LOCATOR_HASH, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 2, core.IPFS_HASH, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
         'validateArticleProof did not revert with incorrect article version');
   }));
 
   it('should revert if article content hash is incorrect', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.SOLUTION_LOCATOR_HASH + 1, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH + 1, accounts[2], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
         'validateArticleProof did not revert with incorrect article content hash');
   }));
 
   it('should revert if article creator is incorrect', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.SOLUTION_LOCATOR_HASH, accounts[0], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[0], core.TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof),
         'validateArticleProof did not revert with incorrect article creator');
   }));
 
   it('should revert if article timestamp is incorrect', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.SOLUTION_LOCATOR_HASH, accounts[2], core.TIMESTAMP + 1, checkpoint.tree.getRootHex(), checkpoint.proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP + 1, checkpoint.tree.getRootHex(), checkpoint.proof),
         'validateArticleProof did not revert with incorrect article timestamp');
   }));
 
@@ -77,7 +77,7 @@ contract('Checkpoint', function(accounts) {
     let proof = checkpoint.proof;
     proof[0] = proof[0] + 1;
 
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.SOLUTION_LOCATOR_HASH, accounts[2], core.TIMESTAMP + 1, checkpoint.tree.getRootHex(), proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP + 1, checkpoint.tree.getRootHex(), proof),
         'validateArticleProof did not revert with incorrect proof');
   }));
 

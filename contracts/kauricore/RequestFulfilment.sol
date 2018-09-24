@@ -32,16 +32,16 @@ contract RequestFulfilment is RequestBounties, CommunityClient {
     function fulfilRequest(bytes32 _requestId,
                             bytes32 _articleId, 
                             uint _articleVersion,
-                            bytes32 _contentHash, 
+                            string _contentHash,
                             address _creatorAddress,
                             uint _timestamp,
                             bytes32 _checkpointRoot,
                             bytes32[] _articleProof,
-                            uint8 _v, 
+                            uint8 _v,
                             bytes32[]_rAndS)
                             public {
         address approverAddress;
-        RequestStatus requestStatus; 
+        RequestStatus requestStatus;
 
         validateArticleProof(_articleId, _articleVersion, _contentHash, _creatorAddress, _timestamp, _checkpointRoot, _articleProof);
         (requestStatus, approverAddress) = validateFulfilRequest(
@@ -52,25 +52,25 @@ contract RequestFulfilment is RequestBounties, CommunityClient {
         } else {
             payoutRequestBounty(_requestId, _articleId, _creatorAddress);
             KauriWriteOperations.updateRequestStatus(storageAddress, _requestId, RequestStatus.ACCEPTED);
-        } 
+        }
 
         RequestFulfilled(_articleId, _requestId, _creatorAddress, _articleVersion, _contentHash, approverAddress);
     }
 
-    function validateFulfilRequest(bytes32 _requestId, 
-                                   bytes32 _articleId, 
+    function validateFulfilRequest(bytes32 _requestId,
+                                   bytes32 _articleId,
                                    uint _articleVersion,
-                                   bytes32 _contentHash, 
+                                   string _contentHash,
                                    address _creatorAddress,
-                                   uint8 _v, 
-                                   bytes32[] _rAndS) 
-                                   private 
+                                   uint8 _v,
+                                   bytes32[] _rAndS)
+                                   private
                                    returns (RequestStatus, address) {
         RequestStatus requestStatus;
         address requestCreator;
         bytes32 requestCommunity;
 
-        (requestStatus, requestCreator, requestCommunity) = 
+        (requestStatus, requestCreator, requestCommunity) =
                 KauriReadOperations.getFulfilRequestContext(storageAddress, _requestId);
 
         address approverAddress = recoverApproverAddress(_articleId, _articleVersion, _requestId,
@@ -83,18 +83,18 @@ contract RequestFulfilment is RequestBounties, CommunityClient {
             require(requestCreator == approverAddress);
         } else {
             require(isCurator(requestCommunity, approverAddress));
-        } 
+        }
 
         return (requestStatus, approverAddress);
     }
 
-    function recoverApproverAddress(bytes32 _articleId, 
+    function recoverApproverAddress(bytes32 _articleId,
                                      uint _articleVersion,
-                                     bytes32 _requestId, 
-                                     bytes32 _contentHash, 
-                                     bytes32 _community, 
+                                     bytes32 _requestId,
+                                     string _contentHash,
+                                     bytes32 _community,
                                      address _creatorAddress,
-                                     uint8 _v, 
+                                     uint8 _v,
                                      bytes32[] _rAndS)
                                      private
                                      pure
@@ -113,10 +113,10 @@ contract RequestFulfilment is RequestBounties, CommunityClient {
             && status != RequestStatus.REFUNDED_ACCEPTED);
     }
 
-    event RequestFulfilled(bytes32 indexed articleId, 
-                           bytes32 indexed requestId, 
-                           address indexed creator, 
-                           uint articleVersion, 
-                           bytes32 contentHash, 
+    event RequestFulfilled(bytes32 indexed articleId,
+                           bytes32 indexed requestId,
+                           address indexed creator,
+                           uint articleVersion,
+                           string contentHash,
                            address moderator);
 }
