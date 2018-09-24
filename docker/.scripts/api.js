@@ -13,6 +13,7 @@ var express    = require('express');        	// call express
 var app        = express();                 	// define our app using express
 var compression = require('compression')
 var helmet = require('helmet')
+var cors = require('cors')
 var fs 		   = require('fs');
 
 // Server host and port
@@ -44,6 +45,7 @@ router.get('/:contractName/all', function(req, res) {
 
 app.use(helmet())
 app.use(compression())
+app.use(cors())
 
 // REGISTER OUR ROUTES -------------------------------
 app.use('/smartcontract', router);
