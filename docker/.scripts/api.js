@@ -11,6 +11,8 @@ const DEFAULT_HOST = "0.0.0.0";
 // call the packages we need
 var express    = require('express');        	// call express
 var app        = express();                 	// define our app using express
+var compression = require('compression')
+var helmet = require('helmet')
 var fs 		   = require('fs');
 
 // Server host and port
@@ -37,7 +39,11 @@ router.get('/:contractName/all', function(req, res) {
     res.json(truffleArtefact);
 });
 
+//SETUP CORS
+//=========================================================
 
+app.use(helmet())
+app.use(compression())
 
 // REGISTER OUR ROUTES -------------------------------
 app.use('/smartcontract', router);
