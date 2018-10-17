@@ -1,3 +1,5 @@
+const DELAY = 10000;
+
 let Community = artifacts.require('Community');
 let Wallet = artifacts.require('Wallet');
 let KauriCore = artifacts.require('KauriCore');
@@ -22,37 +24,41 @@ module.exports = (deployer) => {
     })
     .then(() => { return Storage.deployed() })
     .then((deployedStorage) => {
-      console.log("Adding Storage write permission for KauriCore...");
-      return deployedStorage.addWritePermission(KauriCore.address);
+      return delay(() => {
+        console.log("Adding Storage write permission for KauriCore...");
+        return deployedStorage.addWritePermission(KauriCore.address);
+      });
     })
     .then(() => { return Wallet.deployed() })
     .then((deployedWallet) => {
-      console.log("Adding Wallet write permission for KauriCore...")
-      return deployedWallet.addWritePermission(KauriCore.address);
+      return delay(() => {
+        console.log("Adding Wallet write permission for KauriCore...")
+        return deployedWallet.addWritePermission(KauriCore.address);
+      });
     })
     .then(() => { return KauriCore.deployed() })
     .then((deployedKauriCore) => {
       console.log("Setting admin controller to OnlyOwnerAdminController for Storage contract...");
       return deployedKauriCore.setAdminController(OnlyOwnerAdminController.address)
-        .then(() => {
+        .then(() => delay(() => {
           console.log("Setting Community address on KauriCore...");
           console.log(Community.address);
           return deployedKauriCore.setCommunityContractAddress(Community.address)
-        })
-        .then(() => {
+        }))
+        .then(() => delay(() => {
           console.log("Setting Wallet address on KauriCore...");
           console.log(Wallet.address);
           return deployedKauriCore.setFundsContractAddress(Wallet.address);
-        })
-        .then(() => {
+        }))
+        .then(() => delay(() => {
           console.log("Setting Storage address on KauriCore...");
           console.log(Storage.address);
           return deployedKauriCore.setStorageContractAddress(Storage.address);
-        })
-        .then(() => {
+        }))
+        .then(() => delay(() => {
           console.log("!!!!!!!UPDATE...Setting dummy checkpointer address on KauriCore...UPDATE!!!!!!!");
           return deployedKauriCore.addCheckpointerAddress("0x00a329c0648769a73afac7f9381e08fb43dbea72");
-        })
+        }))
     })
     .then(() => {
       //Output all deployed contract addresses
@@ -62,3 +68,8 @@ module.exports = (deployer) => {
       console.log("Wallet address: " + Wallet.address);
     });
 };
+
+function delay(func) {
+  return new Promise(resolve => setTimeout(resolve, DELAY))
+    .then(func);
+}
