@@ -1,4 +1,4 @@
-const DELAY = 10000;
+let DELAY = 0;
 
 let Community = artifacts.require('Community');
 let Wallet = artifacts.require('Wallet');
@@ -15,6 +15,14 @@ let MIN_DEADLINE = 259200 //3 days in seconds
 let MAX_DEADLINE = 2592000 //30 days in seconds
 
 module.exports = (deployer) => {
+  
+  //Add a delay for rinkeby to overcome infura load balancing issue
+  //https://github.com/trufflesuite/truffle/issues/763
+  console.log(deployer.chain.networkId);
+  if (deployer.chain.networkId == 4) {
+    DELAY = 10000;
+  }
+  
   deployer.deploy(KauriReadOperations)
     .then(() => { return deployer.link(KauriReadOperations, KauriCore) })
     .then(() => { return deployer.deploy(KauriWriteOperations) })
