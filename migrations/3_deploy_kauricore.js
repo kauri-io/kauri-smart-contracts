@@ -18,11 +18,11 @@ module.exports = (deployer) => {
   
   //Add a delay for rinkeby to overcome infura load balancing issue
   //https://github.com/trufflesuite/truffle/issues/763
-  console.log(deployer.chain.networkId);
-  if (deployer.chain.networkId == 4) {
+  //Network id seems to be undefined when deploying to infura in travis??
+  if (!deployer.chain.networkId || deployer.chain.networkId == 4) {
     DELAY = 10000;
   }
-  
+
   deployer.deploy(KauriReadOperations)
     .then(() => { return deployer.link(KauriReadOperations, KauriCore) })
     .then(() => { return deployer.deploy(KauriWriteOperations) })
