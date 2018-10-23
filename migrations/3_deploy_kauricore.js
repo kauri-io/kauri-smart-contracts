@@ -18,8 +18,7 @@ module.exports = (deployer) => {
   
   //Add a delay for rinkeby to overcome infura load balancing issue
   //https://github.com/trufflesuite/truffle/issues/763
-  //Network id seems to be undefined when deploying to infura in travis??
-  if (!deployer.chain.networkId || deployer.chain.networkId == 4) {
+  if (deployer.chain.network_id == 4) {
     DELAY = 10000;
   }
 
@@ -64,8 +63,8 @@ module.exports = (deployer) => {
           return deployedKauriCore.setStorageContractAddress(Storage.address);
         }))
         .then(() => delay(() => {
-          console.log("!!!!!!!UPDATE...Setting dummy checkpointer address on KauriCore...UPDATE!!!!!!!");
-          return deployedKauriCore.addCheckpointerAddress("0x00a329c0648769a73afac7f9381e08fb43dbea72");
+          console.log("Setting dummy checkpointer address on KauriCore");
+          return deployedKauriCore.addCheckpointerAddress(getCheckpointerAddress());
         }))
     })
     .then(() => {
@@ -80,4 +79,15 @@ module.exports = (deployer) => {
 function delay(func) {
   return new Promise(resolve => setTimeout(resolve, DELAY))
     .then(func);
+}
+
+function getCheckpointerAddress() {
+  let checkpointerAddress = process.env.CHECKPOINTER_ADDRESS;
+  if (!checkpointerAddress) {
+    checkpointerAddress = "0x1a8dece37dfc3c2f7416e125397b600ed04f19dc"
+  }
+
+  console.log("Checkpointer address: " + checkpointerAddress)
+
+  return checkpointerAddress;
 }
