@@ -148,5 +148,5 @@ jobs:
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations.sh; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=web3-auth; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=monolith; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
