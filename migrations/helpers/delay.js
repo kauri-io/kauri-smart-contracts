@@ -4,13 +4,12 @@ let delayTime = 0;
 //https://github.com/trufflesuite/truffle/issues/763
 var init = function(networkId) {
  if (networkId == 4) {
-  delayTime = 5000;
+  delayTime = 10000;
    }
 }
 
-var delay = function(func) {
-  return new Promise(resolve => setTimeout(resolve, delayTime))
-      .then(func);
+var delay = function() {
+    return new Promise(resolve => setTimeout(resolve, delayTime));
 }
 
 Object.assign(exports, {
