@@ -19,11 +19,11 @@ spec:
       containers:
       - image: REGISTRY/kauri-contract-abis:TAG
         imagePullPolicy: Always
-        name: web3-auth
+        name: contracts-server
         env:
           - name: API_PORT
-            value: 8888
+            value: "8888"
           - name: API_HOST
-            value: 0.0.0.0
+            value: "0.0.0.0"
         ports:
         - containerPort: 8888
