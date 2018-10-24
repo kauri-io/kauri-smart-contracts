@@ -1,5 +1,3 @@
-let DELAY = 0;
-
 let Community = artifacts.require('Community');
 let Wallet = artifacts.require('Wallet');
 let KauriCore = artifacts.require('KauriCore');
@@ -7,6 +5,8 @@ let KauriReadOperations = artifacts.require('KauriReadOperations');
 let KauriWriteOperations = artifacts.require('KauriWriteOperations');
 let Storage = artifacts.require('Storage');
 let OnlyOwnerAdminController = artifacts.require('OnlyOwnerAdminController');
+let Delay = require('./helpers/delay');
+let delay = Delay.delay;
 
 //KauriCore parameters
 let MAX_BOUNTY_CONTRIBUTIONS = 10;
@@ -18,9 +18,7 @@ module.exports = (deployer) => {
   
   //Add a delay for rinkeby to overcome infura load balancing issue
   //https://github.com/trufflesuite/truffle/issues/763
-  if (deployer.chain.network_id == 4) {
-    DELAY = 10000;
-  }
+  Delay.init(deployer.chain.network_id);
 
   deployer.deploy(KauriReadOperations)
     .then(() => { return deployer.link(KauriReadOperations, KauriCore) })
@@ -75,11 +73,6 @@ module.exports = (deployer) => {
       console.log("Wallet address: " + Wallet.address);
     });
 };
-
-function delay(func) {
-  return new Promise(resolve => setTimeout(resolve, DELAY))
-    .then(func);
-}
 
 function getCheckpointerAddress() {
   let checkpointerAddress = process.env.CHECKPOINTER_ADDRESS;
