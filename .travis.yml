@@ -131,7 +131,7 @@ jobs:
       = development))"
     install:
     - cd kauri-ops
-    - source env_setup.sh --config-file config/config-devgke.json
+    - source env_setup.sh --config-file config/config-dev.json
     - cd ..
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
