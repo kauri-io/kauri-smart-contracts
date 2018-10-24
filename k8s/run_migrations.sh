@@ -4,7 +4,7 @@ if [ "${TARGET_ENV}" == "" ]; then
 fi
 
 if [ "${TARGET_ENV}" == "dev" ]; then
-  network="k8sdev"
+  network="rinkeby"
 elif [ "${TARGET_ENV}" == "dev2" ]; then
   network="rinkeby"
 elif [ "${TARGET_ENV}" == "uat" ]; then
