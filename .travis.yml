@@ -142,7 +142,6 @@ jobs:
     - docker ps
     - docker exec -it docker_truffle-build_1 npm install
     script:
-    - cd smart-contracts
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
