@@ -14,6 +14,7 @@ const BASE_VERSION = 1;
 const TIMESTAMP = 1535111500;
 
 const IPFS_HASH = 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco';
+const ANOTHER_IPFS_HASH = 'QmRZxt2b1FVZPNqd8hsiykDL3TdBDeTSPX9Kv46HmX4Gx8';
 const CONTENT_HASH = ipfsHash.getBytes32FromIpfsHash(IPFS_HASH);
 const METADATA_HASH = ipfsHash.getBytes32FromIpfsHash(IPFS_HASH);
 const UPDATED_CONTENT_HASH = ipfsHash.getBytes32FromIpfsHash('QmWPCRv8jBfr9sDjKuB5sxpVzXhMycZzwqxifrZZdQ6K9o');
@@ -23,8 +24,6 @@ const PUBLICATION_TIMEOUT = 172800; //2 days
 const MIN_DEADLINE = 259200; //3 days;
 const MAX_DEADLINE = 2592000 //30 days;
 const BOUNTY = 10000000;
-const SOLUTION_LOCATOR_HASH = web3.sha3('Some awesome article');
-const UPDATED_SOLUTION_LOCATOR_HASH = web3.sha3('An even more awesome article');
 const MAX_CONTRIBUTIONS = 3;
 
 var KauriCore = artifacts.require('KauriCore.sol');
@@ -117,15 +116,16 @@ async function addRequestAndFulfil(contract, accounts, submitterAddress, article
   return {tx: tx, checkpoint: checkpoint};
 }
 
-async function checkpointArticles(contract, accounts, articleId, creatorAddress, articleVersion) {
+async function checkpointArticles(contract, accounts, articleId, creatorAddress, articleVersion, sig) {
   if (!articleId) {articleId = ARTICLE_ID};
   if (!creatorAddress) {creatorAddress = accounts[2]};
   if (!articleVersion) {articleVersion = BASE_VERSION};
-  let article = {id: articleId, version: articleVersion, contentHash: SOLUTION_LOCATOR_HASH, creator: creatorAddress, timestamp: TIMESTAMP};
-  let anotherArticle = {id: "6666", version: 2, contentHash: SOLUTION_LOCATOR_HASH, creator: accounts[3], timestamp: TIMESTAMP};
+
+  let article = {id: articleId, version: articleVersion, contentHash: IPFS_HASH, creator: creatorAddress, timestamp: TIMESTAMP};
+  let anotherArticle = {id: "6666", version: 2, contentHash: IPFS_HASH, creator: accounts[3], timestamp: TIMESTAMP};
   let checkpointTree = checkpoint.createArticleCheckpointTree([article, anotherArticle]);
   let checkpointRoot = checkpointTree.getRootHex();
-  let sig = createCheckpointSignature(checkpointRoot, IPFS_HASH, accounts[8]);
+  if (!sig) {sig = createCheckpointSignature(checkpointRoot, IPFS_HASH, accounts[8])};
   await contract.checkpointArticles(checkpointRoot, IPFS_HASH, sig.v, sig.r, sig.s);
 
   return {tree: checkpointTree, proof: checkpoint.getProof(checkpointTree, article)};
@@ -149,7 +149,7 @@ async function fulfilRequest(contract, accounts, checkpoint, submitterAddress, a
   if (!requestId) { requestId = ID };
   if (!articleVersion) { articleVersion = BASE_VERSION };
   if (!signature) { signature = createApprovalSignature(articleId, articleVersion, requestId, creatorAddress, accounts[9]) }
-  return await contract.fulfilRequest(requestId, articleId, articleVersion, SOLUTION_LOCATOR_HASH, 
+  return await contract.fulfilRequest(requestId, articleId, articleVersion, IPFS_HASH,
     creatorAddress, TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof, signature.v, [signature.r, signature.s], {from: submitterAddress});
 }
 
@@ -159,7 +159,7 @@ function createApprovalSignature(articleId, articleVersion, requestId, creatorAd
   let hash = keccak256(web3.padRight(fromAscii(articleId), 66),
   articleVersion,
   web3.padRight(fromAscii(requestId), 66),
-  SOLUTION_LOCATOR_HASH,
+  IPFS_HASH,
   community,
   creatorAddress);
 
@@ -192,7 +192,7 @@ async function updateArticle(contract, accounts, standalone, updaterAddress) {
 
   let requestId = getRequestId(standalone);
 
-  return await contract.updateArticle(ARTICLE_ID, requestId, UPDATED_SOLUTION_LOCATOR_HASH, {from: updaterAddress});
+  return await contract.updateArticle(ARTICLE_ID, requestId, ANOTHER_IPFS_HASH, {from: updaterAddress});
 }
 
 async function tipArticle(contract, accounts, checkpoint, tipAmount, articleId, creatorAddress, valueToSend, articleVersion) {
@@ -202,7 +202,7 @@ async function tipArticle(contract, accounts, checkpoint, tipAmount, articleId, 
   if (!creatorAddress) {creatorAddress = accounts[2]}
   if (!articleVersion) {articleVersion = BASE_VERSION}
 
-  return await contract.tipArticle(articleId, articleVersion, SOLUTION_LOCATOR_HASH, creatorAddress, TIMESTAMP, tipAmount, checkpoint.tree.getRootHex(), checkpoint.proof, {from: accounts[3], value: valueToSend });
+  return await contract.tipArticle(articleId, articleVersion, IPFS_HASH, creatorAddress, TIMESTAMP, tipAmount, checkpoint.tree.getRootHex(), checkpoint.proof, {from: accounts[3], value: valueToSend });
 }
 
 async function progressToUpdateRequestVote(contract, accounts) {
@@ -246,10 +246,10 @@ async function checkAvailableFundsDecrease(address, amount, mockFundable, expect
   if (!index) {
     index = 0;
   }
-  
+
   let callCount = await mockFundable.deductAvailableFundsCount.call()
   assert.equal(callCount, expectedInvocationCount, 'deductAvailableFunds invocation count incorrect');
-  
+
   let toAddressArg = await mockFundable.deductAvailableFundsToAddressArg.call(index);
   assert.equal(toAddressArg, address, 'Funds available updated for wrong address');
 
@@ -262,7 +262,7 @@ async function setAvailableFunds(mockFundable, account, value) {
 }
 
 async function createCommunity(contract, accounts) {
-  await contract.createCommunity(COMMUNITY_ID, [accounts[9]], 
+  await contract.createCommunity(COMMUNITY_ID, [accounts[9]],
     [accounts[9]], METADATA_HASH, {from: accounts[9]});
 
   return COMMUNITY_ID;
@@ -282,10 +282,10 @@ function doRedeploy(accounts, testFunction, communityContract, fundableContract)
 
     let fundable = await fundableContract.new(accounts[9], { from: accounts[0] })
 
-    let kauriCoreContract = await KauriCore.new(MAX_CONTRIBUTIONS, 
+    let kauriCoreContract = await KauriCore.new(MAX_CONTRIBUTIONS,
                               PUBLICATION_TIMEOUT,
                               MIN_DEADLINE,
-                              MAX_DEADLINE, 
+                              MAX_DEADLINE,
                               { from: accounts[0] });
 
     let adminController = await AdminController.new({ from: accounts[0] });
@@ -305,12 +305,12 @@ function doRedeploy(accounts, testFunction, communityContract, fundableContract)
     await storageContract.addWritePermission(community.address, {from: accounts[0]});
 
     await kauriCoreContract.addCheckpointerAddress(accounts[8], {from: accounts[0]});
-    
-    
+
+
     if (community.setStorageContractAddress) {
       await community.setStorageContractAddress(storageContract.address, {from: accounts[0]});
     }
-    
+
     await createCommunity(community, accounts);
 
     await fundable.addWritePermission(kauriCoreContract.address);
@@ -361,6 +361,7 @@ Object.assign(exports, {
   redeployNoMocks,
   calculateDueDate,
   createApprovalSignature,
+  createCheckpointSignature,
   getRequestId,
   increaseTimeToPastPublicationPeriod,
   createCommunity,
@@ -371,13 +372,13 @@ Object.assign(exports, {
   ID,
   BOUNTY,
   IPFS_HASH,
+  ANOTHER_IPFS_HASH,
   CONTENT_HASH,
   UPDATED_CONTENT_HASH,
-  SOLUTION_LOCATOR_HASH,
-  UPDATED_SOLUTION_LOCATOR_HASH,
   COMMUNITY_ID,
   SECONDS_IN_WEEK,
   MIN_DEADLINE,
   MAX_DEADLINE,
-  PUBLICATION_TIMEOUT
+  PUBLICATION_TIMEOUT,
+  TIMESTAMP,
 });

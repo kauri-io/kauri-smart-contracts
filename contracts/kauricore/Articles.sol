@@ -22,12 +22,12 @@ contract Articles is RequestBase {
      */
     function tipArticle(bytes32 _articleId,
                         uint _articleVersion, 
-                        bytes32 _contentHash,
+                        string _contentHash,
                         address _creatorAddress,
-                        uint _timestamp, 
+                        uint _timestamp,
                         uint _tipAmount,
                         bytes32 _checkpointRoot,
-                        bytes32[] _articleProof) 
+                        bytes32[] _articleProof)
             external
             payable
             tipAmountSet(_tipAmount)
@@ -35,7 +35,7 @@ contract Articles is RequestBase {
             valueNotGreaterThanAmount(_tipAmount) {
 
         validateArticleProof(_articleId, _articleVersion, _contentHash, _creatorAddress, _timestamp, _checkpointRoot, _articleProof);
-        
+
         //Deduct from available funds if required
         if (_tipAmount > msg.value) {
             deductAvailableFunds(msg.sender, _tipAmount - msg.value);
@@ -49,17 +49,17 @@ contract Articles is RequestBase {
 
         ArticleTipped(_articleId, _creatorAddress, _articleVersion, msg.sender, _tipAmount);
     }
-    
+
     modifier tipAmountSet(uint _tipAmount) {
         require (_tipAmount != 0);
         _;
     }
 
-    event RequestFulfilled(bytes32 indexed articleId, 
-                           bytes32 indexed requestId, 
-                           address indexed creator, 
-                           uint articleVersion, 
-                           bytes32 contentHash, 
+    event RequestFulfilled(bytes32 indexed articleId,
+                           bytes32 indexed requestId,
+                           address indexed creator,
+                           uint articleVersion,
+                           string contentHash,
                            address moderator);
 
     event ArticleTipped(bytes32 indexed articleId,  

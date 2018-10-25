@@ -4,9 +4,9 @@ FROM gcr.io/kauri-197812/kauri-contract-abis:latest-${TARGET_ENV}
 RUN yarn global add \
           --global-folder /usr/local/share \
           ethereumjs-testrpc \
-          truffle@4.1.13 \
+          truffle@4.1.14 \
           truffle-flattener \
-          truffle-hdwallet-provider@0.0.3 \
+          truffle-hdwallet-provider@0.0.7-beta.0 \
           ethereumjs-wallet@0.6.0 \
           solium \
 	  jshint

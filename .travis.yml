@@ -18,6 +18,10 @@ before_install:
   $(lsb_release -cs) stable"
 - sudo apt-get update
 - sudo apt-get -yq --force-yes -o Dpkg::Options::="--force-confold" install docker-ce
+- sudo rm /usr/local/bin/docker-compose
+- curl -L https://github.com/docker/compose/releases/download/1.22.0/docker-compose-`uname -s`-`uname -m` > docker-compose
+- chmod +x docker-compose
+- sudo mv docker-compose /usr/local/bin
 - export COMMITTER_EMAIL="$(git log -1 $TRAVIS_COMMIT --pretty="%cE")"
 - export AUTHOR_NAME="$(git log -1 $TRAVIS_COMMIT --pretty="%aN")"
 - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
@@ -44,13 +48,11 @@ jobs:
     - docker exec -it docker_truffle-test_1 npm install
     script:
     - travis/runTests.sh
-    #after_success:
-    #- rm -rf node_modules
-    #- docker exec -it docker_truffle-coverage_1 npm install
-    #- travis/runCoverage.sh
-    #- docker exec -it docker_truffle-coverage_1 cat coverage/lcov.info | coveralls
-    #notofications:
-    #  webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN
+    after_success:
+    - rm -rf node_modules
+    - docker exec -it docker_truffle-coverage_1 npm install
+    - travis/runCoverage.sh
+    - cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - stage: git-tag
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
@@ -129,7 +131,7 @@ jobs:
       = development))"
     install:
     - cd kauri-ops
-    - source env_setup.sh --config-file config/config-devgke.json
+    - source env_setup.sh --config-file config/config-dev.json
     - cd ..
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
@@ -140,12 +142,11 @@ jobs:
     - docker ps
     - docker exec -it docker_truffle-build_1 npm install
     script:
-    - cd smart-contracts
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations.sh; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=web3-auth; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=monolith; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
