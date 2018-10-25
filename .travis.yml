@@ -60,7 +60,7 @@ jobs:
     - eval $(ssh-agent -s)
     - ssh-add github_deploy_key
     - ssh-add -l
-    - git remote set-url origin git@github.com:ConsenSys/kauri-smart-contract.git
+    - git remote set-url origin git@github.com:kauri-io/kauri-smart-contract.git
     - git remote -v
     - git fetch origin 'refs/tags/*:refs/tags/*'
     script:
