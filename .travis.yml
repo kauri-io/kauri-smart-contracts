@@ -72,7 +72,6 @@ jobs:
     - git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
     - git fetch --all
     - git checkout development
-    - cd ..
     - npm version $NEW_DEV_VERSION --no-git-tag-version
     - git add .
     - git commit -m "Travis build $TRAVIS_BUILD_NUMBER updating version after tag"
