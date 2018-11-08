@@ -48,20 +48,13 @@ contract Articles is FundsManagement, Checkpoint {
 
         addAvailableFunds(_creatorAddress, _tipAmount);
 
-        ArticleTipped(_articleId, _creatorAddress, _articleVersion, msg.sender, _tipAmount);
+        emit ArticleTipped(_articleId, _creatorAddress, _articleVersion, msg.sender, _tipAmount);
     }
 
     modifier tipAmountSet(uint _tipAmount) {
         require (_tipAmount != 0);
         _;
     }
-
-    event RequestFulfilled(bytes32 indexed articleId,
-                           bytes32 indexed requestId,
-                           address indexed creator,
-                           uint articleVersion,
-                           string contentHash,
-                           address moderator);
 
     event ArticleTipped(bytes32 indexed articleId,  
                         address indexed creator, 

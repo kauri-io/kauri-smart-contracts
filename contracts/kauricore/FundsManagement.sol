@@ -33,7 +33,7 @@ contract FundsManagement is Administrable {
         assert(fundsAddress != 0);
         fundsAddress.transfer(msg.value);
 
-        TransferFunds(fundsAddress, msg.value);
+        emit TransferFunds(fundsAddress, msg.value);
     }
 
     modifier canAffordToSpendAmount(uint amount) {
