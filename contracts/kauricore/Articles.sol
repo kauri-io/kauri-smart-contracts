@@ -1,13 +1,14 @@
 pragma solidity ^0.4.24;
 
-import './RequestBounties.sol';
+import './FundsManagement.sol';
+import './Checkpoint.sol';
 
 /**
  * @title Request Articles
  * @author Craig Williams - <craig.williams@consensys.net>
  * @dev Functions for managing articles within the Kauri platform
  */
-contract Articles is RequestBase {
+contract Articles is FundsManagement, Checkpoint {
 
     /**
      * @dev Tip the creator of an article some eth.

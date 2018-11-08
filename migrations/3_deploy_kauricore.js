@@ -33,10 +33,6 @@ async function performMigration(deployer, network, accounts) {
   console.log("Setting admin controller to OnlyOwnerAdminController for Storage contract...");
   await deployedKauriCore.setAdminController(OnlyOwnerAdminController.address)
   await delay()
-  console.log("Setting Community address on KauriCore...");
-  console.log(Community.address);
-  await deployedKauriCore.setCommunityContractAddress(Community.address)
-  await delay()
   console.log("Setting Wallet address on KauriCore...");
   console.log(Wallet.address);
   await deployedKauriCore.setFundsContractAddress(Wallet.address);

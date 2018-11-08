@@ -32,6 +32,8 @@ contract FundsManagement is Administrable {
         address fundsAddress = address(funds);
         assert(fundsAddress != 0);
         fundsAddress.transfer(msg.value);
+
+        TransferFunds(fundsAddress, msg.value);
     }
 
     modifier canAffordToSpendAmount(uint amount) {
@@ -45,4 +47,7 @@ contract FundsManagement is Administrable {
         require(amount >= msg.value);
         _;
     }
+
+    event TransferFunds(address toAddress, 
+                        uint amount);
 }

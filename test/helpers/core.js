@@ -34,7 +34,7 @@ var MockFundable = artifacts.require('MockFundable.sol');
 var Wallet = artifacts.require('Wallet.sol');
 var AdminController = artifacts.require('OnlyOwnerAdminController.sol');
 
-var COMMUNITY_ID = '9876-5432';
+var COMMUNITY_ID = fromAscii('9876-5432');
 
 async function addRequest(contract, accounts, fromAddress, deadline, bountyAmount, msgValue, id, community) {
   if (!fromAddress) { fromAddress = accounts[1]; }
@@ -154,7 +154,7 @@ async function fulfilRequest(contract, accounts, checkpoint, submitterAddress, a
 }
 
 function createApprovalSignature(articleId, articleVersion, requestId, creatorAddress, signerAccount, community) {
-  if (typeof community === "undefined") { community = web3.padRight(fromAscii(COMMUNITY_ID), 66); };
+  if (typeof community === "undefined") { community = web3.padRight(COMMUNITY_ID, 66); };
   if (community == "") { community = web3.padRight(fromAscii(community), 66); };
   let hash = keccak256(web3.padRight(fromAscii(articleId), 66),
   articleVersion,
@@ -297,7 +297,6 @@ function doRedeploy(accounts, testFunction, communityContract, fundableContract)
     await storageContract.setAdminController(adminController.address);
     await kauriCoreContract.setAdminController(adminController.address);
 
-    await kauriCoreContract.setCommunityContractAddress(community.address, {from: accounts[0]});
     await kauriCoreContract.setFundsContractAddress(fundable.address, {from: accounts[0]});
 
     await kauriCoreContract.setStorageContractAddress(storageContract.address, {from: accounts[0]});

@@ -20,6 +20,7 @@ contract('MigrationsDeployment', function(accounts) {
     await kauriCore.addCheckpointerAddress(accounts[8], {from: accounts[0]});
 
     await core.createCommunity(community, accounts);
-    await core.addRequestAndFulfil(kauriCore, accounts);
+    let checkpoint = await core.checkpointArticles(kauriCore, accounts);
+    await core.tipArticle(kauriCore, accounts, checkpoint);
   });
 });

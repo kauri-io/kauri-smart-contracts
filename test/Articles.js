@@ -7,14 +7,14 @@ const getEvents = require('./helpers/getEvents').getEvents;
 
 contract('Articles', function(accounts) {
 
-  it('should allow anyone to tip a article once a article has been accepted', core.redeploy(accounts, async (underTest) => {
-    let returned = await core.addRequestAndFulfil(underTest, accounts);
-    await core.tipArticle(underTest, accounts, returned.checkpoint);
+  it('should allow anyone to tip a article once included in a checkpoint', core.redeploy(accounts, async (underTest) => {
+    let checkpoint = await core.checkpointArticles(underTest, accounts);
+    await core.tipArticle(underTest, accounts, checkpoint);
   }));
 
   it('should fire a ArticleTipped event once a article has been tipped', core.redeploy(accounts, async (underTest) => {
-    let returned = await core.addRequestAndFulfil(underTest, accounts);
-    await core.tipArticle(underTest, accounts, returned.checkpoint);
+    let checkpoint = await core.checkpointArticles(underTest, accounts);
+    await core.tipArticle(underTest, accounts, checkpoint);
   
     let tipped = underTest.ArticleTipped({fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(tipped);
@@ -38,9 +38,9 @@ contract('Articles', function(accounts) {
   async function doTipValueTransferTest(underTest, accounts, mockFundable, valueToSend) {
     if (typeof valueToSend === "undefined") {valueToSend = 1000000};
     await core.setAvailableFunds(mockFundable, accounts[3], 1000000);
-    let returned = await core.addRequestAndFulfil(underTest, accounts);
-    await core.tipArticle(underTest, accounts, returned.checkpoint, 1000000, core.ARTICLE_ID, accounts[2], valueToSend);
-    assert.equal(web3.eth.getBalance(mockFundable.address), core.BOUNTY + valueToSend);
+    let checkpoint = await core.checkpointArticles(underTest, accounts);
+    await core.tipArticle(underTest, accounts, checkpoint, 1000000, core.ARTICLE_ID, accounts[2], valueToSend);
+    assert.equal(web3.eth.getBalance(mockFundable.address), valueToSend);
   }
 
   it('should increase the available funds for tip recipient in the funds contract', core.redeploy(accounts, async (underTest, mockFundable) => {
@@ -56,12 +56,12 @@ contract('Articles', function(accounts) {
   }));
 
   async function doTipThenArticleCreatorFundsIncreaseTest(underTest, accounts, mockFundable, valueToSend) {
-    let expectedInvocationCount = 2;
+    let expectedInvocationCount = 1;
 
     await core.setAvailableFunds(mockFundable, accounts[3], 1000000);
-    let returned = await core.addRequestAndFulfil(underTest, accounts);
-    await core.tipArticle(underTest, accounts, returned.checkpoint, 1000000, core.ARTICLE_ID, accounts[2], valueToSend);
-    await core.checkAvailableFundsIncrease(accounts[2], 1000000, mockFundable, expectedInvocationCount, expectedInvocationCount - 1);
+    let checkpoint = await core.checkpointArticles(underTest, accounts);
+    await core.tipArticle(underTest, accounts, checkpoint, 1000000, core.ARTICLE_ID, accounts[2], valueToSend);
+    await core.checkAvailableFundsIncrease(accounts[2], 1000000, mockFundable, 1, expectedInvocationCount - 1);
   }
 
   it('should decrease available funds for tipper when funded from wallet (partially wallet funded)', core.redeploy(accounts, async (underTest, mockFundable) => {
@@ -74,21 +74,21 @@ contract('Articles', function(accounts) {
 
   async function doWalletFundedTipFundsDecreaseTest(underTest, accounts, mockFundable, valueToSend) {
     await core.setAvailableFunds(mockFundable, accounts[3], 1000000);
-    let returned = await core.addRequestAndFulfil(underTest, accounts);
-    await core.tipArticle(underTest, accounts, returned.checkpoint, 1000000, core.ARTICLE_ID, accounts[2], valueToSend);
+    let checkpoint = await core.checkpointArticles(underTest, accounts);
+    await core.tipArticle(underTest, accounts, checkpoint, 1000000, core.ARTICLE_ID, accounts[2], valueToSend);
     await core.checkAvailableFundsDecrease(accounts[3], 1000000 - valueToSend, mockFundable, 1, 0);
   }
 
   it('should not allow a transaction to tipArticle with zero tip amount', core.redeploy(accounts, async (underTest) => {
-    let returned = await core.addRequestAndFulfil(underTest, accounts);
-    await assertRevert(core.tipArticle(underTest, accounts, returned.checkpoint, 0),
+    let checkpoint = await core.checkpointArticles(underTest, accounts);
+    await assertRevert(core.tipArticle(underTest, accounts, checkpoint, 0),
         'Allowed a call to tipArticle without a tip amount');
   }));
 
   it('should not allow article to be tipped if the tipper cant afford tip amount', core.redeploy(accounts, async (underTest, mockFundable) => {
     await core.setAvailableFunds(mockFundable, accounts[3], 1000000);
-    let returned = await core.addRequestAndFulfil(underTest, accounts);
-    await assertRevert(core.tipArticle(underTest, accounts, returned.checkpoint, 2000000, core.ARTICLE_ID, accounts[2], 500000),
+    let checkpoint = await core.checkpointArticles(underTest, accounts);
+    await assertRevert(core.tipArticle(underTest, accounts, checkpoint, 2000000, core.ARTICLE_ID, accounts[2], 500000),
         'Allowed a call to tipArticle when value cant be afforded');
   }));
 
