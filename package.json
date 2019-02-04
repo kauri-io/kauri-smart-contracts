@@ -1,6 +1,6 @@
 {
   "name": "kauri-smart-contracts",
-  "version": "0.0.2",
+  "version": "0.0.7",
   "description": "Kauri protocol for incentivisation of knowledge creation",
   "scripts": {
     "compile": "truffle compile",
@@ -12,8 +12,8 @@
   "author": "Craig Williams <craig.williams@consensys.net>",
   "dependencies": {
     "bs58": "4.0.1",
-    "truffle": "4.1.13",
-    "truffle-hdwallet-provider": "0.0.3",
+    "truffle": "4.1.14",
+    "truffle-hdwallet-provider": "0.0.7-beta.0",
     "ethereumjs-wallet": "0.6.0",
     "ethereumjs-util": "5.2.0",
     "openzeppelin-solidity": "1.12.0"

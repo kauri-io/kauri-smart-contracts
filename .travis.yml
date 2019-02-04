@@ -24,6 +24,8 @@ before_install:
 - sudo mv docker-compose /usr/local/bin
 - export COMMITTER_EMAIL="$(git log -1 $TRAVIS_COMMIT --pretty="%cE")"
 - export AUTHOR_NAME="$(git log -1 $TRAVIS_COMMIT --pretty="%aN")"
+- git config --global user.name "Travis CI User"
+- git config --global user.email "user@example.com"
 - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
   CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 - source /home/travis/google-cloud-sdk/path.bash.inc
@@ -60,7 +62,7 @@ jobs:
     - eval $(ssh-agent -s)
     - ssh-add github_deploy_key
     - ssh-add -l
-    - git remote set-url origin git@github.com:ConsenSys/kauri-frontend.git
+    - git remote set-url origin git@github.com:kauri-io/kauri-smart-contracts.git
     - git remote -v
     - git fetch origin 'refs/tags/*:refs/tags/*'
     script:
@@ -72,7 +74,6 @@ jobs:
     - git config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
     - git fetch --all
     - git checkout development
-    - cd ..
     - npm version $NEW_DEV_VERSION --no-git-tag-version
     - git add .
     - git commit -m "Travis build $TRAVIS_BUILD_NUMBER updating version after tag"
@@ -80,14 +81,12 @@ jobs:
   - stage: deploy-uat
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
-    - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V --quiet
     - cd kauri-ops
     - source env_setup.sh --config-file config/config-uat.json
     - cd ..
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
-    - mv secrets.json smart-contracts/.
     - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
     - docker-compose -f docker/docker-compose-truffle-build.yml build
     - docker-compose -f docker/docker-compose-truffle-build.yml up -d
@@ -131,7 +130,7 @@ jobs:
       = development))"
     install:
     - cd kauri-ops
-    - source env_setup.sh --config-file config/config-devgke.json
+    - source env_setup.sh --config-file config/config-dev.json
     - cd ..
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
@@ -142,12 +141,11 @@ jobs:
     - docker ps
     - docker exec -it docker_truffle-build_1 npm install
     script:
-    - cd smart-contracts
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations.sh; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=web3-auth; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash kubectl delete pods -l app=monolith; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
