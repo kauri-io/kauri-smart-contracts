@@ -9,7 +9,7 @@
   "dependencies": {
     "bs58": "4.0.1",
     "truffle": "5.0.1",
-    "truffle-hdwallet-provider": "0.0.7-beta.0",
+    "truffle-hdwallet-provider": "web3-one",
     "ethereumjs-wallet": "0.6.0",
     "ethereumjs-util": "5.2.0",
     "openzeppelin-solidity": "1.12.0"
