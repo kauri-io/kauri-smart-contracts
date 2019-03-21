@@ -38,6 +38,7 @@ before_install:
 # - mkdir -p lib
 # - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
 #   --key-file client-secret.json; fi
+- sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 && sudo apt-get update
 - sudo add-apt-repository ppa:ethereum/ethereum -y
 - sudo apt-get update
 - sudo apt-get install build-essential -y
