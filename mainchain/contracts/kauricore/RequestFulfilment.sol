@@ -13,7 +13,7 @@ contract RequestFulfilment is RequestBounties, CommunityClient {
     /**
      * @dev Fulfils a request in order to receive the associated bounty.
 
-     * @dev Reverts if: 
+     * @dev Reverts if:
      * @dev     - a request with the specified id does not exist
      * @dev     - the request is already in an ACCCEPTED state
      * @dev     - the provided signature signer is not a moderator for the request
@@ -30,7 +30,7 @@ contract RequestFulfilment is RequestBounties, CommunityClient {
      * @param _rAndS approval signature r and s values in that order
      */
     function fulfilRequest(bytes32 _requestId,
-                            bytes32 _articleId, 
+                            bytes32 _articleId,
                             uint _articleVersion,
                             string _contentHash,
                             address _creatorAddress,

@@ -16,6 +16,7 @@
 // root is a length 1 array
 
 const sha3 = require ('ethereumjs-util').sha3;
+const ethJS = require ('ethereumjs-util')
 
 // Expects elements to be Buffers of length 32
 // Empty string elements will be removed prior to the buffer check
@@ -27,7 +28,7 @@ function MerkleTree(elements, preserveOrder) {
 
   // remove empty strings
   this.elements = elements.filter(a => a)
-  
+
   // check buffers
   if (this.elements.some((e) => !(e.length == 32 && Buffer.isBuffer(e)))) {
     throw new Error('elements must be 32 byte buffers')
@@ -67,6 +68,10 @@ MerkleTree.prototype.getProofOrdered = function(element, index, hex) {
   return getProof(index - 1, this.layers, hex)
 }
 
+MerkleTree.prototype.checkProof = function(proof, root, element) {
+  return checkProof(proof,root,element)
+}
+
 const checkProofOrdered = function(proof, root, element, index) {
   // use the index to determine the node ordering
   // index ranges 1 to n
@@ -95,6 +100,7 @@ const checkProofOrdered = function(proof, root, element, index) {
 }
 
 const checkProof = function(proof, root, element) {
+
   return root.equals(proof.reduce((hash, pair) => {
     return combinedHash(hash, pair)
   }, element))
@@ -119,7 +125,7 @@ const checkProofOrderedSolidityFactory = function(checkProofOrderedContractMetho
   return function(proof, root, hash, index) {
     proof = '0x' + proof.map(e => e.toString('hex')).join('')
     root = bufToHex(root)
-    hash = bufToHex(hash)
+    hash = ethJs.toBuffer(hash)
     return checkProofOrderedContractMethod(proof, root, hash, index)
   }
 }
@@ -184,7 +190,7 @@ function getBufIndex(element, array) {
 }
 
 function bufToHex(element) {
-  return Buffer.isBuffer(element) ? '0x' + element.toString('hex') : element
+  return ethJS.bufferToHex(element)
 }
 
 function bufJoin(...args) {
@@ -202,5 +208,6 @@ function bufDedup(buffers) {
 }
 
 Object.assign(exports, {
-  MerkleTree
+  MerkleTree,
+  checkProof
 });

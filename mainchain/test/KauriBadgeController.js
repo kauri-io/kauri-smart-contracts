@@ -8,16 +8,17 @@ const assertRevert = require('./helpers/assertRevert').assertRevert;
 const fromAscii = require('./helpers/ascii').fromAscii;
 const toAscii = require('./helpers/ascii').toAscii;
 const core = require('./helpers/core');
-const keccak256 = require('./helpers/hash').keccak256;
+const hashHelper = require('./helpers/hash');
+const ethJs = require('ethereumjs-util');
 
 contract('KauriBadgeController', function(accounts) {
-  
+
   it('should mint a kauri badge when redeeming 5 community approval proofs', redeploy(accounts[0], accounts, async (underTest, kauriBadge, communityId) => {
-    let signatures = [createCommunityApprovalSignature(communityId, keccak256("0"), accounts[0], accounts[9]),
-                      createCommunityApprovalSignature(communityId, keccak256("1"), accounts[0], accounts[9]),
-                      createCommunityApprovalSignature(communityId, keccak256("2"), accounts[0], accounts[9]),
-                      createCommunityApprovalSignature(communityId, keccak256("3"), accounts[0], accounts[9]),
-                      createCommunityApprovalSignature(communityId, keccak256("4"), accounts[0], accounts[9])];
+    let signatures = [await createCommunityApprovalSignature(communityId, web3.utils.soliditySha3("0"), accounts[0], accounts[9]),
+                      await createCommunityApprovalSignature(communityId, web3.utils.soliditySha3("1"), accounts[0], accounts[9]),
+                      await createCommunityApprovalSignature(communityId, web3.utils.soliditySha3("2"), accounts[0], accounts[9]),
+                      await createCommunityApprovalSignature(communityId, web3.utils.soliditySha3("3"), accounts[0], accounts[9]),
+                      await createCommunityApprovalSignature(communityId, web3.utils.soliditySha3("4"), accounts[0], accounts[9])];
 
     let communityIds = [];
     let articleIds = [];
@@ -27,7 +28,7 @@ contract('KauriBadgeController', function(accounts) {
 
     for (var i = 0; i < signatures.length; i++) {
       communityIds.push(communityId);
-      articleIds.push(keccak256(i.toString()));
+      articleIds.push(web3.utils.soliditySha3(i.toString()));
       vValues.push(signatures[i].v);
       rValues.push(signatures[i].r);
       sValues.push(signatures[i].s);
@@ -38,24 +39,26 @@ contract('KauriBadgeController', function(accounts) {
 
 });
 
-function createCommunityApprovalSignature(communityId, articleId, creatorAddress, signerAccount) {
-  if (communityId == "") { communityId = web3.padRight(fromAscii(community), 66); };
-  let hash = keccak256(fromAscii('KAURI_COMM_APP'), 
-                       web3.padRight(fromAscii(communityId), 66),
+async function createCommunityApprovalSignature(communityId, articleId, creatorAddress, signerAccount) {
+  if (communityId == "") { communityId = web3.utils.padRight(ethJs.bufferToHex(new Buffer(community)));};
+  let hash = web3.utils.soliditySha3(web3.utils.padRight(ethJs.bufferToHex(new Buffer('KAURI_COMM_APP'))),
+                       web3.utils.padRight(communityId, 64),
                        articleId,
                        creatorAddress);
 
-  let sig = web3.eth.sign(signerAccount, hash);
+
+
+  let sig = await hashHelper.web3Sign(hash,signerAccount);
   sig = sig.substr(2, sig.length);
   let r = '0x' + sig.substr(0, 64);
   let s = '0x' + sig.substr(64, 64);
-  let v = web3.toDecimal(sig.substr(128, 2)) + 27;
+  let v = web3.utils.toDecimal(sig.substr(128, 2)) + 27;
 
   return {"r": r, "s": s, "v": v};
 }
 
 function redeploy(deployer, accounts, testFunction) {
-  
+
   var wrappedFunction = async () => {
     let storageContract = await Storage.new({ from: deployer});
     let communityContract = await MockCommunity.new({ from: deployer });
@@ -78,6 +81,6 @@ function redeploy(deployer, accounts, testFunction) {
 
     await testFunction(kauriBadgeController, kauriBadgeContract, communityId);
   };
-  
+
   return wrappedFunction;
 }

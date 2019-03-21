@@ -6,6 +6,7 @@ const ipfsHash = require('./helpers/ipfsHash');
 const assertRevert = require('./helpers/assertRevert').assertRevert;
 const fromAscii = require('./helpers/ascii').fromAscii;
 const toAscii = require('./helpers/ascii').toAscii;
+const ethJs = require('ethereumjs-util');
 
 const IPFS_HASH = 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco';
 const METADATA_HASH = ipfsHash.getBytes32FromIpfsHash(IPFS_HASH);
@@ -20,7 +21,7 @@ const ROLE_CURATOR = 0;
 const ROLE_ADMIN = 1;
 
 contract('Community', function(accounts) {
-  
+
   it('should allow anyone to create a new community', redeploy(accounts[0], async (underTest) => {
     await addCommunity(underTest);
   }));
@@ -51,10 +52,10 @@ contract('Community', function(accounts) {
 
   it('should fire a CommunityCreated event after community creation', redeploy(accounts[0], async (underTest) => {
     let id = await addCommunity(underTest);
-    
-    var created = underTest.CommunityCreated({fromBlock: 0, toBlock: 'latest'});
+
+    var created = underTest.getPastEvents('CommunityCreated',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(created);
-    assert.equal(toAscii(logs[0].args.communityId), id, "Community id not set correctly");
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.communityId), web3.utils.hexToUtf8(id), "Community id not set correctly");
     assert.equal(logs[0].args.metadataLocator, METADATA_HASH, "Metadata locator not set correctly");
   }));
 
@@ -68,12 +69,12 @@ contract('Community', function(accounts) {
   it('should fire an MemberEnabled event after admin added', redeploy(accounts[0], async (underTest) => {
     let id = await addCommunity(underTest);
     await underTest.addAdmin(id, accounts[ADMIN_TWO_INDEX], {from: accounts[ADMIN_ONE_INDEX]});
-    
-    var added = underTest.MemberEnabled({fromBlock: 0, toBlock: 'latest'});
+
+    var added = underTest.getPastEvents('MemberEnabled',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(added);
-    assert.equal(toAscii(logs[0].args.communityId), id, "Community id not set correctly");
-    assert.equal(logs[0].args.member, accounts[ADMIN_TWO_INDEX], "Admin address not set correctly");
-    assert.equal(logs[0].args.role, ROLE_ADMIN, "Admin role not set correctly");
+    assert.equal(web3.utils.hexToUtf8(logs[logs.length-1].args.communityId), web3.utils.hexToUtf8(id), "Community id not set correctly");
+    assert.equal(logs[logs.length-1].args.member, accounts[ADMIN_TWO_INDEX], "Admin address not set correctly");
+    assert.equal(logs[logs.length-1].args.role, ROLE_ADMIN, "Admin role not set correctly");
   }));
 
   it('should not set added admin as a curator', redeploy(accounts[0], async (underTest) => {
@@ -82,10 +83,10 @@ contract('Community', function(accounts) {
     let isCurator = await underTest.isCurator(id, accounts[ADMIN_TWO_INDEX]);
     assert.equal(isCurator, false, "Admin set as curator!");
   }));
-  
+
   it('should not allow an admin to add a zero address as an admin', redeploy(accounts[0], async (underTest) => {
     let id = await addCommunity(underTest);
-    await assertRevert(underTest.addAdmin(id, '0x0', {from: accounts[ADMIN_ONE_INDEX]}),
+    await assertRevert(underTest.addAdmin(id, '0x0000000000000000000000000000000000000000', {from: accounts[ADMIN_ONE_INDEX]}),
       'Allowed a 0x0 address!');
   }));
 
@@ -111,12 +112,12 @@ contract('Community', function(accounts) {
   it('should fire a MemberEnabled event after curator added', redeploy(accounts[0], async (underTest) => {
     let id = await addCommunity(underTest);
     await underTest.addCurator(id, accounts[CURATOR_TWO_INDEX], {from: accounts[ADMIN_ONE_INDEX]});
-    
-    var added = underTest.MemberEnabled({fromBlock: 0, toBlock: 'latest'});
+
+    var added = underTest.getPastEvents('MemberEnabled',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(added);
-    assert.equal(toAscii(logs[0].args.communityId), id, "Community id not set correctly");
-    assert.equal(logs[0].args.member, accounts[CURATOR_TWO_INDEX], "Curator address not set correctly");
-    assert.equal(logs[0].args.role, ROLE_CURATOR, "Curator role not set correctly");
+    assert.equal(web3.utils.hexToUtf8(logs[logs.length-1].args.communityId), web3.utils.hexToUtf8(id), "Community id not set correctly");
+    assert.equal(logs[logs.length-1].args.member, accounts[CURATOR_TWO_INDEX], "Curator address not set correctly");
+    assert.equal(logs[logs.length-1].args.role, ROLE_CURATOR, "Curator role not set correctly");
   }));
 
   it('should not set added curator as a admin', redeploy(accounts[0], async (underTest) => {
@@ -126,10 +127,10 @@ contract('Community', function(accounts) {
     let isAdmin = await underTest.isAdmin(id, accounts[CURATOR_TWO_INDEX]);
     assert.equal(isAdmin, false, "Curator set as admin!");
   }));
-  
+
   it('should not allow an admin to add a zero address as a curator', redeploy(accounts[0], async (underTest) => {
     let id = await addCommunity(underTest);
-    await assertRevert(underTest.addCurator(id, '0x0', {from: accounts[ADMIN_ONE_INDEX]}),
+    await assertRevert(underTest.addCurator(id, '0x0000000000000000000000000000000000000000', {from: accounts[ADMIN_ONE_INDEX]}),
       'Allowed a 0x0 address!');
   }));
 
@@ -157,10 +158,10 @@ contract('Community', function(accounts) {
     let id = await addCommunity(underTest);
     await underTest.addAdmin(id, accounts[ADMIN_TWO_INDEX], {from: accounts[ADMIN_ONE_INDEX]});
     await underTest.disableAdmin(id, accounts[ADMIN_ONE_INDEX], {from: accounts[ADMIN_TWO_INDEX]});
-    
-    var disabled = underTest.MemberDisabled({fromBlock: 0, toBlock: 'latest'});
+
+    var disabled = underTest.getPastEvents('MemberDisabled',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(disabled);
-    assert.equal(toAscii(logs[0].args.communityId), id, "Community id not set correctly");
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.communityId), web3.utils.hexToUtf8(id), "Community id not set correctly");
     assert.equal(logs[0].args.member, accounts[ADMIN_ONE_INDEX], "Admin address not set correctly");
     assert.equal(logs[0].args.role, ROLE_ADMIN, "Admin role not set on event");
   }));
@@ -189,10 +190,10 @@ contract('Community', function(accounts) {
   it('should fire a MemberDisabled event after curator disabled', redeploy(accounts[0], async (underTest) => {
     let id = await addCommunity(underTest);
     await underTest.disableCurator(id, accounts[CURATOR_ONE_INDEX], {from: accounts[ADMIN_ONE_INDEX]});
-    
-    var disabled = underTest.MemberDisabled({fromBlock: 0, toBlock: 'latest'});
+
+    var disabled = underTest.getPastEvents('MemberDisabled',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(disabled);
-    assert.equal(toAscii(logs[0].args.communityId), id, "Community id not set correctly");
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.communityId), web3.utils.hexToUtf8(id), "Community id not set correctly");
     assert.equal(logs[0].args.member, accounts[CURATOR_ONE_INDEX], "Curator address not set correctly");
     assert.equal(logs[0].args.role, ROLE_CURATOR, "Curator role not set correctly");
   }));
@@ -209,10 +210,11 @@ contract('Community', function(accounts) {
     await assertRevert(underTest.disableCurator(id, accounts[CURATOR_ONE_INDEX], {from: accounts[GENERAL_USER_INDEX]}),
       'Allowed a non admin to disable a curator!');
   }));
-  
+
   async function addCommunity(contract) {
     let id = Math.floor(Math.random() * 1000) + '-' + Math.floor(Math.random() * 1000);
-    await contract.createCommunity(id, [accounts[ADMIN_ONE_INDEX]], 
+    id = ethJs.bufferToHex(new Buffer(id));
+    await contract.createCommunity(id, [accounts[ADMIN_ONE_INDEX]],
       [accounts[CURATOR_ONE_INDEX]], METADATA_HASH, {from: accounts[9]});
 
     return id;
@@ -220,7 +222,7 @@ contract('Community', function(accounts) {
 });
 
 function redeploy(deployer, testFunction) {
-  
+
   var wrappedFunction = async () => {
     let storageContract = await Storage.new({ from: deployer});
     let communityContract = await Community.new({ from: deployer });
@@ -234,6 +236,6 @@ function redeploy(deployer, testFunction) {
 
     await testFunction(communityContract);
   };
-  
+
   return wrappedFunction;
 }

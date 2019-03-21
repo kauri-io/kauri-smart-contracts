@@ -7,7 +7,7 @@ const getEvents = require('./helpers/getEvents').getEvents;
 
 contract('Articles', function(accounts) {
 
-  it('should allow anyone to tip a article once a article has been accepted', core.redeploy(accounts, async (underTest) => {
+  it('should allow anyone to tip an article once an article has been accepted', core.redeploy(accounts, async (underTest) => {
     let returned = await core.addRequestAndFulfil(underTest, accounts);
     await core.tipArticle(underTest, accounts, returned.checkpoint);
   }));
@@ -15,12 +15,14 @@ contract('Articles', function(accounts) {
   it('should fire a ArticleTipped event once a article has been tipped', core.redeploy(accounts, async (underTest) => {
     let returned = await core.addRequestAndFulfil(underTest, accounts);
     await core.tipArticle(underTest, accounts, returned.checkpoint);
-  
-    let tipped = underTest.ArticleTipped({fromBlock: 0, toBlock: 'latest'});
-    let logs = await getEvents(tipped);
+
+
+
+    let tipped = underTest.getPastEvents('ArticleTipped',{fromBlock: 0, toBlock: 'latest'})
+    let logs = await getEvents(tipped)
     let expectedRequestId = core.ID;
 
-    assert.equal(toAscii(logs[0].args.articleId), core.ARTICLE_ID, 'Article Id incorrect');
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.articleId), web3.utils.hexToUtf8(core.ARTICLE_ID), 'Article Id incorrect');
     assert.equal(logs[0].args.creator, accounts[2], 'Submitted incorrect');
     assert.equal(logs[0].args.tipper, accounts[3], 'Tipper incorrect');
     assert.equal(logs[0].args.tipAmount, 1000000, 'Tip amount incorrect');
@@ -40,7 +42,7 @@ contract('Articles', function(accounts) {
     await core.setAvailableFunds(mockFundable, accounts[3], 1000000);
     let returned = await core.addRequestAndFulfil(underTest, accounts);
     await core.tipArticle(underTest, accounts, returned.checkpoint, 1000000, core.ARTICLE_ID, accounts[2], valueToSend);
-    assert.equal(web3.eth.getBalance(mockFundable.address), core.BOUNTY + valueToSend);
+    assert.equal(await web3.eth.getBalance(mockFundable.address), core.BOUNTY + valueToSend);
   }
 
   it('should increase the available funds for tip recipient in the funds contract', core.redeploy(accounts, async (underTest, mockFundable) => {

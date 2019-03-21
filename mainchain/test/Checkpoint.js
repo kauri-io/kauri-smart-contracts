@@ -10,10 +10,10 @@ contract('Checkpoint', function(accounts) {
   it('should allow anyone to add a checkpoint if sig signed by checkpoint account', core.redeploy(accounts, async (underTest) => {
     await core.checkpointArticles(underTest, accounts);
   }));
- 
+
   it('should fire an ArticlesCheckpointed event when a checkpoint is added', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    let checkpointed = underTest.ArticlesCheckpointed({fromBlock: 0, toBlock: 'latest'});
+    let checkpointed = underTest.getPastEvents('ArticlesCheckpointed',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(checkpointed);
     assert.equal(logs[0].args.checkpointRoot, checkpoint.tree.getRootHex(), 'Checkpoint root incorrect');
     assert.equal(logs[0].args.checkpointDocumentLocator, core.IPFS_HASH, 'Checkpoint document locator incorrect');
@@ -26,7 +26,7 @@ contract('Checkpoint', function(accounts) {
     let checkpointTree = checkpoint.createArticleCheckpointTree([article, anotherArticle]);
     let checkpointRoot = checkpointTree.getRootHex();
 
-    let sig = core.createCheckpointSignature(checkpointRoot, core.IPFS_HASH, accounts[0])
+    let sig = await core.createCheckpointSignature(checkpointRoot, core.IPFS_HASH, accounts[0])
     await assertRevert(core.checkpointArticles(underTest, accounts, undefined, undefined, undefined, sig),
         'Checkpoint was added with incorrect signature');
   }));
@@ -38,7 +38,7 @@ contract('Checkpoint', function(accounts) {
 
   it('should revert if checkpoint hash is invalid', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
-    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP, web3.sha3('invalid'), checkpoint.proof),
+    await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP, web3.utils.sha3('invalid'), checkpoint.proof),
         'validateArticleProof did not revert with incorrect checkpoint');
   }));
 
@@ -75,7 +75,9 @@ contract('Checkpoint', function(accounts) {
   it('should revert if article proof is incorrect', core.redeploy(accounts, async (underTest) => {
     let checkpoint = await core.checkpointArticles(underTest, accounts);
     let proof = checkpoint.proof;
-    proof[0] = proof[0] + 1;
+    let proofBytes = web3.utils.hexToBytes(proof[0])
+    proofBytes[31] = proofBytes[31] + 1
+    proof[0] = web3.utils.bytesToHex(proofBytes)
 
     await assertRevert(underTest.validateArticleProof(core.ARTICLE_ID, 1, core.IPFS_HASH, accounts[2], core.TIMESTAMP + 1, checkpoint.tree.getRootHex(), proof),
         'validateArticleProof did not revert with incorrect proof');

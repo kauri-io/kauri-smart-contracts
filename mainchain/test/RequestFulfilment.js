@@ -4,6 +4,7 @@ const increaseTime = require('./helpers/time').increaseTime;
 const core = require('./helpers/core');
 const assertRevert = require('./helpers/assertRevert').assertRevert;
 const getEvents = require('./helpers/getEvents').getEvents;
+const ethJs = require('ethereumjs-util');
 
 contract('RequestFulfilment', function(accounts) {
 
@@ -21,7 +22,7 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should allow fulfilment of non-community request with sig from request creator', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts, undefined, undefined, undefined, undefined, undefined, "");
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       core.ARTICLE_ID, core.BASE_VERSION, core.ID, accounts[2], accounts[1], "");
     await core.checkpointAndFulfilRequest(underTest, accounts, core.ARTICLE_ID, accounts[2], sig);
   }));
@@ -49,7 +50,7 @@ contract('RequestFulfilment', function(accounts) {
     await core.addRequest(underTest, accounts);
 
     await core.checkpointAndFulfilRequest(underTest, accounts);
-    
+
     await verifyFulfilledEvent(underTest, accounts, core.BASE_VERSION);
   }));
 
@@ -79,7 +80,7 @@ contract('RequestFulfilment', function(accounts) {
     await core.progressToRefunded(underTest, accounts);
     await core.checkpointAndFulfilRequest(underTest, accounts);
 
-    let paidOut = underTest.RequestBountyPaidOut({fromBlock: 0, toBlock: 'latest'});
+    let paidOut = underTest.getPastEvents('RequestBountyPaidOut',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(paidOut);
 
     assert.equal(logs.length, 0, 'Fired RequestBountyPaidOut event for refunded request article');
@@ -129,9 +130,9 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should allow multiple fulfilments with the same article id', core.redeploy(accounts, async (underTest) => {
     await core.addRequestAndFulfil(underTest, accounts);
-
-    await core.addRequest(underTest, accounts, undefined, undefined, undefined, undefined, 'diff-id');
-    await core.checkpointAndFulfilRequest(underTest, accounts, undefined,  undefined, undefined, 'diff-id');
+    let diffId = ethJs.bufferToHex(new Buffer('diff-id'));
+    await core.addRequest(underTest, accounts, undefined, undefined, undefined, undefined, diffId);
+    await core.checkpointAndFulfilRequest(underTest, accounts, undefined,  undefined, undefined, diffId);
   }));
 
   it('should not allow a fulfilment for an ACCEPTED request', core.redeploy(accounts, async (underTest) => {
@@ -148,7 +149,7 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should not allow a community request to be fulfilled if sig signed by request creator', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       core.ARTICLE_ID, core.BASE_VERSION, core.ID, accounts[2], accounts[1]);
     await assertRevert(core.checkpointAndFulfilRequest(underTest, accounts, undefined, undefined, sig),
       'Fulfilled successfully with signature signed by request creator!');
@@ -156,15 +157,15 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should not allow a non community request to be fulfilled if sig signed by community', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts, undefined, undefined, undefined, undefined, undefined, "");
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       core.ARTICLE_ID, core.BASE_VERSION, core.ID, accounts[2], accounts[9], "");
     await assertRevert(core.checkpointAndFulfilRequest(underTest, accounts, undefined, undefined, sig),
       'Fulfilled successfully with signature signed by community!');
   }));
-  
+
   it('should not allow a request to be fulfilled if sig article id invalid', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       "invalid", core.BASE_VERSION, core.ID, accounts[2], accounts[9]);
     await assertRevert(core.checkpointAndFulfilRequest(underTest, accounts, undefined, undefined, sig),
       'Fulfilled successfully with invalid signature article id!');
@@ -172,7 +173,7 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should not allow an article to be fulfilled if sig version invalid', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       core.ARTICLE_ID, 2, core.ID, accounts[2], accounts[9]);
     await assertRevert(core.checkpointAndFulfilRequest(underTest, accounts, undefined, undefined, sig),
       'Fulfilled successfully with invalid signature article version');
@@ -180,7 +181,7 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should not allow an article to be fulfilled if sig request id invalid', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       core.ARTICLE_ID, core.BASE_VERSION, "invalid", accounts[2], accounts[9]);
     await assertRevert(core.checkpointAndFulfilRequest(underTest, accounts, undefined, undefined, sig),
       'Fulfilled successfully with invalid signature request id');
@@ -188,7 +189,7 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should not allow an article to be fulfilled if sig creator invalid', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       core.ARTICLE_ID, core.BASE_VERSION, core.ID, accounts[3], accounts[9]);
     await assertRevert(core.checkpointAndFulfilRequest(underTest, accounts, undefined, undefined, sig),
       'Fulfilled successfully with invalid signature creator address');
@@ -196,7 +197,7 @@ contract('RequestFulfilment', function(accounts) {
 
   it('should not allow an article to be fulfilled if sig signer invalid', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
-    let sig = core.createApprovalSignature(
+    let sig = await core.createApprovalSignature(
       core.ARTICLE_ID, core.BASE_VERSION, core.ID, accounts[2], accounts[8]);
     await assertRevert(core.checkpointAndFulfilRequest(underTest, accounts, undefined, undefined, sig),
       'Fulfilled successfully with invalid signature signer');
@@ -205,14 +206,14 @@ contract('RequestFulfilment', function(accounts) {
 });
 
 async function verifyFulfilledEvent(underTest, accounts, expectedVersion) {
-  var fulfilled = underTest.RequestFulfilled({fromBlock: 0, toBlock: 'latest'});
+  var fulfilled = underTest.getPastEvents('RequestFulfilled',{fromBlock: 0, toBlock: 'latest'});
   let logs = await getEvents(fulfilled);
 
   //expect blank request id for standalone
   let expectedRequestId = core.ID;
 
-  assert.equal(toAscii(logs[0].args.requestId), expectedRequestId, 'Request Id incorrect');
-  assert.equal(toAscii(logs[0].args.articleId), core.ARTICLE_ID, 'Article Id incorrect');
+  assert.equal(web3.utils.hexToUtf8(logs[0].args.requestId), web3.utils.hexToUtf8(expectedRequestId), 'Request Id incorrect');
+  assert.equal(web3.utils.hexToUtf8(logs[0].args.articleId), web3.utils.hexToUtf8(core.ARTICLE_ID), 'Article Id incorrect');
   assert.equal(logs[0].args.creator, accounts[2]);
   assert.equal(logs[0].args.contentHash, core.IPFS_HASH, 'Content hash incorrect');
   assert.equal(logs[0].args.moderator, accounts[9], 'Moderator incorrect');
@@ -220,11 +221,11 @@ async function verifyFulfilledEvent(underTest, accounts, expectedVersion) {
 }
 
 async function verifyPaidOutEvent(underTest, accounts) {
-  let paidOut = underTest.RequestBountyPaidOut({fromBlock: 0, toBlock: 'latest'});
+  let paidOut = underTest.getPastEvents('RequestBountyPaidOut',{fromBlock: 0, toBlock: 'latest'});
   let logs = await getEvents(paidOut);
 
-  assert.equal(toAscii(logs[0].args.articleId), core.ARTICLE_ID, 'Article Id incorrect');
-  assert.equal(toAscii(logs[0].args.requestId), core.ID, 'Request Id incorrect');
+  assert.equal(web3.utils.hexToUtf8(logs[0].args.articleId), web3.utils.hexToUtf8(core.ARTICLE_ID), 'Article Id incorrect');
+  assert.equal(web3.utils.hexToUtf8(logs[0].args.requestId), web3.utils.hexToUtf8(core.ID), 'Request Id incorrect');
   assert.equal(logs[0].args.acceptedCreator, accounts[2], 'Creator incorrect');
   assert.equal(logs[0].args.bountyTotal, core.BOUNTY, 'Bounty incorrect');
 }

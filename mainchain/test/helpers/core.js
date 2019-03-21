@@ -8,8 +8,8 @@ const getEvents = require('./getEvents').getEvents;
 const checkpoint = require('./checkpoint');
 const ethJs = require('ethereumjs-util');
 
-const ID = '12-34';
-const ARTICLE_ID = '43-21';
+const ID = ethJs.bufferToHex(new Buffer('0x12-34'));
+const ARTICLE_ID = ethJs.bufferToHex(new Buffer('0x43-21'));
 const BASE_VERSION = 1;
 const TIMESTAMP = 1535111500;
 
@@ -34,16 +34,16 @@ var MockFundable = artifacts.require('MockFundable.sol');
 var Wallet = artifacts.require('Wallet.sol');
 var AdminController = artifacts.require('OnlyOwnerAdminController.sol');
 
-var COMMUNITY_ID = '9876-5432';
+var COMMUNITY_ID = ethJs.bufferToHex(new Buffer('9876-5432'));
 
 async function addRequest(contract, accounts, fromAddress, deadline, bountyAmount, msgValue, id, community) {
   if (!fromAddress) { fromAddress = accounts[1]; }
-  if (!deadline) { deadline = calculateDueDate(); }
+  if (!deadline) { deadline = await calculateDueDate(); }
   if (!bountyAmount) { bountyAmount = BOUNTY; }
   if (typeof msgValue === "undefined") { msgValue = BOUNTY; }
   if (!id) { id = ID; }
   if (typeof community === "undefined") { community = COMMUNITY_ID; }
-
+  if (community == "") { community = ethJs.bufferToHex(new Buffer(community)); };
   return await contract.addRequest(id, CONTENT_HASH, community, deadline, bountyAmount,
     {from: fromAddress, value: msgValue});
 };
@@ -125,7 +125,7 @@ async function checkpointArticles(contract, accounts, articleId, creatorAddress,
   let anotherArticle = {id: "6666", version: 2, contentHash: IPFS_HASH, creator: accounts[3], timestamp: TIMESTAMP};
   let checkpointTree = checkpoint.createArticleCheckpointTree([article, anotherArticle]);
   let checkpointRoot = checkpointTree.getRootHex();
-  if (!sig) {sig = createCheckpointSignature(checkpointRoot, IPFS_HASH, accounts[8])};
+  if (!sig) {sig = await createCheckpointSignature(checkpointRoot, IPFS_HASH, accounts[8])};
   await contract.checkpointArticles(checkpointRoot, IPFS_HASH, sig.v, sig.r, sig.s);
 
   return {tree: checkpointTree, proof: checkpoint.getProof(checkpointTree, article)};
@@ -148,40 +148,49 @@ async function fulfilRequest(contract, accounts, checkpoint, submitterAddress, a
   if (!creatorAddress) { creatorAddress = submitterAddress };
   if (!requestId) { requestId = ID };
   if (!articleVersion) { articleVersion = BASE_VERSION };
-  if (!signature) { signature = createApprovalSignature(articleId, articleVersion, requestId, creatorAddress, accounts[9]) }
+  let article = {id: articleId, version: articleVersion, contentHash: IPFS_HASH, creator: creatorAddress, timestamp: TIMESTAMP};
+  if (!signature) { signature = await createApprovalSignature(articleId, articleVersion, requestId, creatorAddress, accounts[9]) }
   return await contract.fulfilRequest(requestId, articleId, articleVersion, IPFS_HASH,
     creatorAddress, TIMESTAMP, checkpoint.tree.getRootHex(), checkpoint.proof, signature.v, [signature.r, signature.s], {from: submitterAddress});
 }
 
-function createApprovalSignature(articleId, articleVersion, requestId, creatorAddress, signerAccount, community) {
-  if (typeof community === "undefined") { community = web3.padRight(fromAscii(COMMUNITY_ID), 66); };
-  if (community == "") { community = web3.padRight(fromAscii(community), 66); };
-  let hash = keccak256(web3.padRight(fromAscii(articleId), 66),
+function hashArticle(article) {
+
+  let hash = web3.utils.soliditySha3(article.id,
+    article.version,
+    article.contentHash,
+    article.creator,
+    article.timestamp);
+
+  let buffer = ethJs.toBuffer(hash);
+
+  return buffer;
+}
+
+async function createApprovalSignature(articleId, articleVersion, requestId, creatorAddress, signerAccount, community) {
+  if (typeof community === "undefined") { community = web3.utils.padRight(COMMUNITY_ID,64); };
+  if (community == "") { community = web3.utils.padRight(ethJs.bufferToHex(new Buffer(community)),64); };
+  let hash = web3.utils.soliditySha3(web3.utils.padRight(articleId,64),
   articleVersion,
-  web3.padRight(fromAscii(requestId), 66),
+  web3.utils.padRight(requestId,64),
   IPFS_HASH,
   community,
   creatorAddress);
-
-  let sig = web3.eth.sign(signerAccount, hash);
+  let sig = await checkpoint.web3Sign(hash,signerAccount);
   sig = sig.substr(2, sig.length);
   let r = '0x' + sig.substr(0, 64);
   let s = '0x' + sig.substr(64, 64);
-  let v = web3.toDecimal(sig.substr(128, 2)) + 27;
-
+  let v = web3.utils.toDecimal(sig.substr(128, 2)) + 27;
   return {"r": r, "s": s, "v": v};
 }
 
-function createCheckpointSignature(checkpointRoot, checkpointDocumentHash, signerAccount) {
-
-  let hash = keccak256(checkpointRoot, checkpointDocumentHash);
-
-  let sig = web3.eth.sign(signerAccount, hash);
+async function createCheckpointSignature(checkpointRoot, checkpointDocumentHash, signerAccount) {
+  let hash = web3.utils.soliditySha3(checkpointRoot,checkpointDocumentHash)
+  let sig = await checkpoint.web3Sign(hash,signerAccount);
   sig = sig.substr(2, sig.length);
   let r = '0x' + sig.substr(0, 64);
   let s = '0x' + sig.substr(64, 64);
-  let v = web3.toDecimal(sig.substr(128, 2)) + 27;
-
+  let v = web3.utils.toDecimal(sig.substr(128, 2)) + 27;
   return {"r": r, "s": s, "v": v};
 }
 
@@ -320,8 +329,9 @@ function doRedeploy(accounts, testFunction, communityContract, fundableContract)
   return wrappedFunction;
 }
 
-function calculateDueDate() {
-  return getCurrentTime() + SECONDS_IN_WEEK;
+async function calculateDueDate() {
+  let time = await getCurrentTime();
+  return time + SECONDS_IN_WEEK;
 }
 
 async function increaseTimeToPastPublicationPeriod() {

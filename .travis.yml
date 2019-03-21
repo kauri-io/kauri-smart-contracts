@@ -1,5 +1,7 @@
-language: node
-sudo: false
+language: node_js
+node_js:
+  - "11.4.0"
+sudo: required
 services:
 - docker
 branches:
@@ -36,18 +38,21 @@ before_install:
 - mkdir -p lib
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
   --key-file client-secret.json; fi
+- sudo add-apt-repository ppa:ethereum/ethereum -y
+- sudo apt-get update
+- sudo apt-get install build-essential -y
+- sudo apt-get install gcc g++ libssl-dev libudev-dev pkg-config
+- curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
+- sudo apt-get install -y nodejs
+- rm -rf node_modules
 after_install:
 - docker kill $(docker ps -q)
 jobs:
   include:
   - stage: solidity-tests
     install:
-    - docker-compose -f docker/docker-compose-truffle-test.yml build
-    - docker-compose -f docker/docker-compose-truffle-test.yml up -d
-    - docker-compose -f docker/docker-compose-truffle-coverage.yml build
-    - docker-compose -f docker/docker-compose-truffle-coverage.yml up -d
-    - docker ps
-    - docker exec -it docker_truffle-test_1 npm install
+    - npm install
+    - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     script:
     - travis/runTests.sh
     after_success:

@@ -17,7 +17,7 @@ var getProof = (tree, article) => {
 
 var hashArticle = (article) => {
 
-  let hash = keccak256(web3.padRight(fromAscii(article.id), 66),
+  let hash = web3.utils.soliditySha3(web3.utils.padRight(article.id,64),
     article.version,
     article.contentHash,
     article.creator,
@@ -28,8 +28,16 @@ var hashArticle = (article) => {
   return buffer;
 }
 
+var web3Sign = (data,address) => {
+  return new Promise(function(resolve) {
+    web3.eth.sign(data,address).then(function(sig) {
+          resolve(sig)
+      });
+  })
+}
+
 Object.assign(exports, {
   createArticleCheckpointTree,
-  getProof
+  getProof,
+  web3Sign
 });
-

@@ -11,14 +11,14 @@ contract('RequestBase', function(accounts) {
   it('should allow any user to add a request', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts)
   }));
-  
+
   it('should not allow a request to be added with a deadline below min', core.redeploy(accounts, async (underTest) => {
-    await assertRevert(core.addRequest(underTest, accounts, undefined, getCurrentTime() + core.MIN_DEADLINE - 100),
+    await assertRevert(core.addRequest(underTest, accounts, undefined, await getCurrentTime() + core.MIN_DEADLINE - 100),
       'Request deadline below minimum was added successfully!');
   }));
 
   it('should not allow a request to be added with a deadline above max', core.redeploy(accounts, async (underTest) => {
-    await assertRevert(core.addRequest(underTest, accounts, undefined, getCurrentTime() + core.MAX_DEADLINE + 100),
+    await assertRevert(core.addRequest(underTest, accounts, undefined, await getCurrentTime() + core.MAX_DEADLINE + 100),
       'Request deadline above maximum was added successfully!');
   }));
 
@@ -36,17 +36,17 @@ contract('RequestBase', function(accounts) {
   it('should fire a RequestCreated event after a request is added', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
 
-    var created = underTest.RequestCreated({fromBlock: 0, toBlock: 'latest'});
+    var created = underTest.getPastEvents('RequestCreated',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(created);
-        
-    assert.equal(toAscii(logs[0].args.id), core.ID, 'Id not correct on added event');
+
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.id), web3.utils.hexToUtf8(core.ID), 'Id not correct on added event');
     assert.equal(logs[0].args.creator, accounts[1], 'Creator not correct on event')
     //TODO check topic...bytes32 seems to be encoded weirdly
   }));
 
   it('should send bounty to funds contract when adding a request', core.redeploy(accounts, async (underTest, mockFundable) => {
     await core.addRequest(underTest, accounts);
-    assert.equal(web3.eth.getBalance(mockFundable.address), core.BOUNTY);
+    assert.equal(await web3.eth.getBalance(mockFundable.address), core.BOUNTY);
   }));
 
   it('should deduct from available balance if bounty is more than msg.value', core.redeploy(accounts, async (underTest, mockFundable) => {
@@ -73,12 +73,12 @@ contract('RequestBase', function(accounts) {
         'Didnt error when value exceeds bounty');
   }));
 
-  it('should allow anyone to start work on a CREATED request', core.redeploy(accounts, async (underTest) => { 
+  it('should allow anyone to start work on a CREATED request', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
     await core.startWorkOnRequest(underTest, accounts);
   }));
 
-  it('should increment the request flagged count after starting work on request', core.redeploy(accounts, async (underTest) => { 
+  it('should increment the request flagged count after starting work on request', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
     await core.startWorkOnRequest(underTest, accounts);
     let requestDetails = await core.getRequest(underTest, accounts);
@@ -88,9 +88,9 @@ contract('RequestBase', function(accounts) {
   it('should fire a RequestFlagged event when a user called startWorkOnTicket', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
     await core.startWorkOnRequest(underTest, accounts);
-    let flagged = underTest.RequestFlagged({fromBlock: 0, toBlock: 'latest'});
+    let flagged = underTest.getPastEvents('RequestFlagged',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(flagged);
-    assert.equal(toAscii(logs[0].args.requestId), core.ID, 'Id incorrect');
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.requestId), web3.utils.hexToUtf8(core.ID), 'Id incorrect');
     assert.equal(logs[0].args.contributorAddress, accounts[2], 'Contributor address incorrect');
   }));
 
@@ -118,9 +118,9 @@ contract('RequestBase', function(accounts) {
     await core.addRequest(underTest, accounts);
     await core.startWorkOnRequest(underTest, accounts);
     await core.cancelWorkOnRequest(underTest, accounts);
-    let unflagged = underTest.RequestUnflagged({fromBlock: 0, toBlock: 'latest'});
+    let unflagged = underTest.getPastEvents('RequestUnflagged',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(unflagged);
-    assert.equal(toAscii(logs[0].args.requestId), core.ID, 'Id incorrect');
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.requestId), web3.utils.hexToUtf8(core.ID), 'Id incorrect');
     assert.equal(logs[0].args.contributorAddress, accounts[2], 'Contributor address incorrect');
   }));
 
@@ -130,9 +130,9 @@ contract('RequestBase', function(accounts) {
     await core.startWorkOnRequest(underTest, accounts, accounts[3]);
     await core.cancelWorkOnRequest(underTest, accounts);
     await core.cancelWorkOnRequest(underTest, accounts, accounts[3]);
-    let reset = underTest.RequestReset({fromBlock: 0, toBlock: 'latest'});
+    let reset = underTest.getPastEvents('RequestReset',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(reset);
-    assert.equal(toAscii(logs[0].args.requestId), core.ID, 'Id incorrect');
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.requestId), web3.utils.hexToUtf8(core.ID), 'Id incorrect');
   }));
 
   it('should error if non provider calls cancelWorkOnRequest', core.redeploy(accounts, async (underTest) => {

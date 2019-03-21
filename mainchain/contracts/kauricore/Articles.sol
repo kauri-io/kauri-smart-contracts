@@ -12,7 +12,7 @@ contract Articles is RequestBase {
     /**
      * @dev Tip the creator of an article some eth.
      *
-     * @dev Reverts if: 
+     * @dev Reverts if:
      * @dev     - the article exists on-chain and the creator address does not match
      *
      * @param _articleId the id of the article to tip
@@ -21,7 +21,7 @@ contract Articles is RequestBase {
      * @param _tipAmount the amount of ether to tip
      */
     function tipArticle(bytes32 _articleId,
-                        uint _articleVersion, 
+                        uint _articleVersion,
                         string _contentHash,
                         address _creatorAddress,
                         uint _timestamp,
@@ -62,9 +62,9 @@ contract Articles is RequestBase {
                            string contentHash,
                            address moderator);
 
-    event ArticleTipped(bytes32 indexed articleId,  
-                        address indexed creator, 
+    event ArticleTipped(bytes32 indexed articleId,
+                        address indexed creator,
                         uint articleVersion,
-                        address tipper, 
+                        address tipper,
                         uint tipAmount);
 }

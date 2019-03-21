@@ -19,7 +19,7 @@ contract('RequestRefunding', function(accounts) {
     await assertRevert(core.refundRequest(underTest, accounts),
         'Did not error when calling refundRequest when deadline not exceeded');
    }));
-  
+
    it('should set request status to REFUNDED if deadline is exceeded and publication period has past', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
     await core.increaseTimeToPastPublicationPeriod();
@@ -27,17 +27,17 @@ contract('RequestRefunding', function(accounts) {
     let requestDetails = await core.getRequest(underTest, accounts);
     assert.equal(requestDetails[1], 3, 'Status not changed to refunded');
   }));
-  
+
   it('should fire a RequestRefunded event when a request is refunded', core.redeploy(accounts, async (underTest) => {
     await core.addRequest(underTest, accounts);
     await core.increaseTimeToPastPublicationPeriod();
     await core.refundRequest(underTest, accounts);
-    let refunded = underTest.RequestRefunded({fromBlock: 0, toBlock: 'latest'});
+    let refunded = underTest.getPastEvents('RequestRefunded',{fromBlock: 0, toBlock: 'latest'});
     let logs = await getEvents(refunded);
-    assert.equal(toAscii(logs[0].args.id), core.ID, 'Id incorrect');
+    assert.equal(web3.utils.hexToUtf8(logs[0].args.id), web3.utils.hexToUtf8(core.ID), 'Id incorrect');
     assert.equal(logs[0].args.creator, accounts[1], 'Creator incorrect');
   }));
-  
+
   it('should add available funds for creator equal to initial bounty if refunded', core.redeploy(accounts, async (underTest, mockFundable) => {
     await core.addRequest(underTest, accounts);
     await core.increaseTimeToPastPublicationPeriod();
@@ -55,14 +55,14 @@ contract('RequestRefunding', function(accounts) {
     await core.checkAvailableFundsIncrease(accounts[2], 50000, mockFundable, 3, 1);
     await core.checkAvailableFundsIncrease(accounts[3], 70000, mockFundable, 3, 2);
   }));
-  
+
   it('should not refund request if deadline has passed but a request has been accepted', core.redeploy(accounts, async (underTest) => {
     await core.addRequestAndFulfil(underTest, accounts);
     await core.increaseTimeToPastPublicationPeriod();
     await assertRevert(core.refundRequest(underTest, accounts),
         'Refunded when deadline passed but an article has been accepted');
   }));
-  
+
   it('should not refund request if deadline + publication has passed but a request has been accepted', core.redeploy(accounts, async (underTest) => {
     await core.addRequestAndFulfil(underTest, accounts);
     await core.increaseTimeToPastPublicationPeriod();

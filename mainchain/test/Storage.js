@@ -1,16 +1,17 @@
 const assertRevert = require('./helpers/assertRevert').assertRevert;
 const fromAscii = require('./helpers/ascii').fromAscii;
 const toAscii = require('./helpers/ascii').toAscii;
+const ethJs = require('ethereumjs-util');
 
 var Storage = artifacts.require('Storage.sol');
 
 contract('Storage', function(accounts) {
   const writer = 5;
-  const keyOne = "keyOne";
-  const keyTwo = "keyTwo";
-  const keyThree = "keyThree";
-  const keyFour = "keyFour";
-  const keyFive = "keyFive"
+  const keyOne = ethJs.bufferToHex(new Buffer('keyOne'));
+  const keyTwo = ethJs.bufferToHex(new Buffer('keyTwo'));
+  const keyThree = ethJs.bufferToHex(new Buffer('keyThree'));
+  const keyFour = ethJs.bufferToHex(new Buffer('keyFour'));
+  const keyFive = ethJs.bufferToHex(new Buffer('keyFive'));
 
   let storage;
 

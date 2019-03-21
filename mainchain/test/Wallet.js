@@ -6,7 +6,7 @@ const AdminController = artifacts.require('OnlyOwnerAdminController.sol');
 contract('Wallet', function(accounts) {
 
 	const FUNDS_TO_ADD = 1000000000;
-  
+
   it("should be able to add write permissions via the owner account", redeploy(accounts[0], async(wallet) => {
 		await wallet.addWritePermission(accounts[1], {from: accounts[0], gas: 3000000});
   }));
@@ -44,11 +44,12 @@ contract('Wallet', function(accounts) {
 		//Send ether to the wallet fallback so enough funds are available to withdraw
 		await sendTransaction(accounts[0], wallet.address, 999999999999999);
 			await addAvailableFunds(wallet);
-			let fundsBefore = web3.eth.getBalance(accounts[2]);
+			let fundsBefore = await web3.eth.getBalance(accounts[2]);
+			const BN = web3.utils.BN;
 			let tx = await wallet.withdrawFunds({from: accounts[2], gas: 3000000, gasPrice: 1})
-			let fundsAfter = web3.eth.getBalance(accounts[2]);
+			let fundsAfter = await web3.eth.getBalance(accounts[2]);
 			let gasUsed = tx.receipt.gasUsed;
-			assert.equal(fundsAfter.toString(), fundsBefore.plus(FUNDS_TO_ADD - gasUsed).toString(), "Funds not transferred correctly");
+			assert.equal(fundsAfter, new BN(fundsBefore).add(new BN(FUNDS_TO_ADD - gasUsed)).toString(), "Funds not transferred correctly");
 	}));
 
 	it("should zero available funds after withdrawal", redeploy(accounts[0], async (wallet) => {
@@ -105,6 +106,6 @@ function redeploy(deployer, testFunction) {
 		await newWallet.setAdminController(adminController.address, { from: deployer });
 		await testFunction(newWallet);
 	}
-	
+
 	return wrappedFunction;
 }
