@@ -29,16 +29,16 @@ before_install:
 - export AUTHOR_NAME="$(git log -1 $TRAVIS_COMMIT --pretty="%aN")"
 - git config --global user.name "Travis CI User"
 - git config --global user.email "user@example.com"
-- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
-  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
-- source /home/travis/google-cloud-sdk/path.bash.inc
-- gcloud --quiet version
-- gcloud --quiet components update
-- gcloud --quiet components update kubectl
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
-- mkdir -p lib
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
-  --key-file client-secret.json; fi
+# - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
+#   CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+# - source /home/travis/google-cloud-sdk/path.bash.inc
+# - gcloud --quiet version
+# - gcloud --quiet components update
+# - gcloud --quiet components update kubectl
+# - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
+# - mkdir -p lib
+# - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
+#   --key-file client-secret.json; fi
 # Workaround for invalid GPG keys for MongoDB, CouchDB, and git-lfs
 - sudo rm -f /etc/apt/sources.list.d/mongodb*
 - sudo rm -f /etc/apt/sources.list.d/couchdb*
