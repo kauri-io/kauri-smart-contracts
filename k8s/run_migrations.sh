@@ -14,6 +14,7 @@ else
   exit 1
 fi
 
+cp secrets.json mainchain/.
 cd mainchain
 
 if [ "${MIGRATION_MODE}" == "reset" ]; then
@@ -44,16 +45,16 @@ if [ "${CONTRACT_ADDRESS}" == "" ] || [ "${COMMUNITY_CONTRACT_ADDRESS}" == "" ] 
   exit 1
 fi
 
-if [ -n "$(kubectl get secret smart-contract-addresses --ignore-not-found)" ]; then
-  kubectl delete secret smart-contract-addresses
-fi
-
-kubectl create secret generic smart-contract-addresses \
-                                                --namespace=${TARGET_ENV} \
-                                                --from-literal=KuariCoreContractAddress=$CONTRACT_ADDRESS \
-                                                --from-literal=ModeratorContractAddress=$MODERATOR_CONTRACT_ADDRESS \
-                                                --from-literal=WalletContractAddress=$WALLET_CONTRACT_ADDRESS \
-                                                --from-literal=StorageContractAddress=$STORAGE_CONTRACT_ADDRESS \
-                                                --from-literal=CommunityContractAddress=$COMMUNITY_CONTRACT_ADDRESS
+# if [ -n "$(kubectl get secret smart-contract-addresses --ignore-not-found)" ]; then
+#   kubectl delete secret smart-contract-addresses
+# fi
+#
+# kubectl create secret generic smart-contract-addresses \
+#                                                 --namespace=${TARGET_ENV} \
+#                                                 --from-literal=KuariCoreContractAddress=$CONTRACT_ADDRESS \
+#                                                 --from-literal=ModeratorContractAddress=$MODERATOR_CONTRACT_ADDRESS \
+#                                                 --from-literal=WalletContractAddress=$WALLET_CONTRACT_ADDRESS \
+#                                                 --from-literal=StorageContractAddress=$STORAGE_CONTRACT_ADDRESS \
+#                                                 --from-literal=CommunityContractAddress=$COMMUNITY_CONTRACT_ADDRESS
 
 cd ..
