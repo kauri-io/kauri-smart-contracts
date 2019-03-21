@@ -25,7 +25,10 @@ before_install:
 # Update the package list and install the Cloud SDK
 - sudo apt-get update && sudo apt-get install google-cloud-sdk
 - gcloud --quiet version
-- gcloud --quiet components update
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
+- mkdir -p lib
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
+  --key-file client-secret.json; fi
 # - gcloud --quiet components update kubectl
 # - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 # - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu
@@ -40,11 +43,6 @@ before_install:
 # - export AUTHOR_NAME="$(git log -1 $TRAVIS_COMMIT --pretty="%aN")"
 # - git config --global user.name "Travis CI User"
 # - git config --global user.email "user@example.com"
-#
-# - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
-# - mkdir -p lib
-# # - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
-# #   --key-file client-secret.json; fi
 # # Workaround for invalid GPG keys for MongoDB, CouchDB, and git-lfs
 # - sudo rm -f /etc/apt/sources.list.d/mongodb*
 # - sudo rm -f /etc/apt/sources.list.d/couchdb*
