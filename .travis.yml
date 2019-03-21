@@ -35,8 +35,8 @@ before_install:
 # - gcloud --quiet version
 # - gcloud --quiet components update
 # - gcloud --quiet components update kubectl
-# - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
-# - mkdir -p lib
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
+- mkdir -p lib
 # - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
 #   --key-file client-secret.json; fi
 # Workaround for invalid GPG keys for MongoDB, CouchDB, and git-lfs
