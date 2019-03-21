@@ -1,8 +1,8 @@
 dist: xenial
 language: node_js
 node_js:
-  - "11.4.0"
-sudo: false
+  - "10.15.0"
+sudo: required
 services:
 - docker
 branches:
@@ -47,7 +47,7 @@ before_install:
 - sudo apt-get update
 - sudo apt-get install build-essential -y
 - sudo apt-get install gcc g++ libssl-dev libudev-dev pkg-config
-- curl -sL https://deb.nodesource.com/setup_11.x | sudo -E bash -
+- curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
 - sudo apt-get install -y nodejs
 - rm -rf node_modules
 after_install:
