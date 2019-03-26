@@ -5,7 +5,7 @@ import './AdminController.sol';
 
 contract OnlyOwnerAdminController is AdminController, Ownable {
 
-    function canAdminister(uint functionCode, address caller) public returns(bool) {
-        return caller == owner;
+    function canAdminister(uint /*functionCode*/, address caller) public returns(bool) {
+        return caller == owner();
     }
 }

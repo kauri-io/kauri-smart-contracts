@@ -14,10 +14,10 @@ interface ICommon // can we include both functions in one interface, function ov
     function createGroup(bytes32 _metadataLocator) external returns (bool);
 }
 
-contract Communities is IMetaTx, ICommon, UsingExternalStorage
+contract Group is IMetaTx, ICommon, UsingExternalStorage
 {
     // string constants for storage contract hashes
-    string  constant COMMUNITY_KEY      = "community";
+    string  constant GROUP_KEY      = "community";
     string  constant ADMIN_KEY          = "admin";
     string  constant CURATOR_KEY        = "curator";
     
@@ -28,20 +28,7 @@ contract Communities is IMetaTx, ICommon, UsingExternalStorage
     
     mapping(address => uint256) public nonces;
     
-    struct User
-    {
-        address userAddress;
-        uint8 userRole;
-    }
-    
-    struct Group
-    {
-        bytes32 metadataLocator;
-        address groupCreator;
-        User[] users;
-    }
-    
-    uint256 public sequence; // what is this?
+    uint256 public sequence; 
     mapping(uint256 => Group) public groups;
         
     constructor(
@@ -65,7 +52,7 @@ contract Communities is IMetaTx, ICommon, UsingExternalStorage
         return keccak256(
             abi.encodePacked(
                 address(this), // address
-                "createGroup", // string
+                "createGroup", // string - "createGroup"
                 _metadataLocator, // bytes32
                 _nonce // uint256
                 )
@@ -83,6 +70,7 @@ contract Communities is IMetaTx, ICommon, UsingExternalStorage
     {
         bytes32 hash = prepareCreateGroup(_metadataLocator, _nonce);
         address signer = getSigner(hash, _signature, _nonce);
+
         return createGroup(signer, _metadataLocator);
     }
     
@@ -105,18 +93,34 @@ contract Communities is IMetaTx, ICommon, UsingExternalStorage
         internal
         returns (bool)
     {
-        uint existingCommunityStatus = storageContract.getUintValue(keccak256(abi.encodePacked(COMMUNITY_KEY, sequence)));
+        uint existingCommunityStatus = storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    GROUP_KEY, sequence
+                )
+            )
+        );
+
         require(existingCommunityStatus == 0);
 
-        groups[sequence].metadataLocator = _metadataLocator;
-        groups[sequence].groupCreator = _sender;
-        
-        //User[] memory users; 
-        //users[0] = User(msg.sender, admin);
+        storageContract.putBooleanValue(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "active")), true);
 
-        storageContract.putBooleanValue(keccak256(abi.encodePacked(COMMUNITY_KEY, sequence)), true);
-        storageContract.putBytes32Value(keccak256(abi.encodePacked(COMMUNITY_KEY, sequence)), _metadataLocator);
-        storageContract.putAddressValue(keccak256(abi.encodePacked(COMMUNITY_KEY, sequence)), _sender);
+        storageContract.putBytes32Value(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "group", "metadataLocator")), _metadataLocator);
+
+        storageContract.putAddressValue(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "group", "groupOwner")), _sender);
+
+        storageContract.putBytes32Value(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "group", "members", "first"), "usernamehere"));
+
+        storageContract.putBytes32Value(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "group", "members", "second"), "usernamehere"));
+
+        // TODO: set group members (admins and curators)
+
+        emit GroupCreated(sequence, _sender);
 
         sequence++;
 
@@ -165,12 +169,7 @@ contract Communities is IMetaTx, ICommon, UsingExternalStorage
         }
         
         address sender = ecrecover(
-            keccak256(
-                abi.encodePacked(
-                    "\x19Ethereum Signed Message:\n32", 
-                    _hash
-            )
-            ),
+            _hash,
             v, 
             r, 
             s
@@ -179,6 +178,7 @@ contract Communities is IMetaTx, ICommon, UsingExternalStorage
     }
 
     // events
+    event GroupCreated(uint256 sequence, address groupOwner);
     
 }
 

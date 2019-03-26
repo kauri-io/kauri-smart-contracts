@@ -26,7 +26,7 @@ contract Administrable is AdminController, Ownable {
         if (address(remoteAdminController) != address(0)) {
             require(canAdminister(1001, msg.sender));
         } else {
-            require(address(owner) == msg.sender);
+            require(owner() == msg.sender);
         }
 
         remoteAdminController = AdminController(adminControllerAddress);
