@@ -3,27 +3,28 @@ pragma solidity ^0.5.6;
 import '../common/UsingExternalStorage.sol';
 
 // TODO: move interfaces to own file
-interface IMetaTx
+interface IGroupMetaTx
 {
     function prepareCreateGroup(bytes32 _metadataLocator, uint256 _nonce) external view returns (bytes32);
     function createGroup(bytes32 _metadataLocator, bytes calldata _signature, uint256 _nonce) external returns (bool);
 }
 
-interface ICommon // can we include both functions in one interface, function overloading
+interface IGroupCommon // can we include both functions in one interface, function overloading
 {
     function createGroup(bytes32 _metadataLocator) external returns (bool);
 }
 
-contract Group is IMetaTx, ICommon, UsingExternalStorage
+contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
 {
     // string constants for storage contract hashes
     string  constant GROUP_KEY      = "community";
-    string  constant ADMIN_KEY          = "admin";
-    string  constant CURATOR_KEY        = "curator";
+    string  constant MEMBER_KEY     = "member";
+    string  constant CURATOR_KEY    = "curator";
     
     // role constants 
     uint8   constant admin        = 1;
     uint8   constant moderator    = 2;
+    uint8   constant supermoderator = 3;
     uint8[] public   roles;
     
     mapping(address => uint256) public nonces;
@@ -32,6 +33,7 @@ contract Group is IMetaTx, ICommon, UsingExternalStorage
     mapping(uint256 => Group) public groups;
         
     constructor(
+        // make sure there's at least one role: the creator
         uint8[] memory _roles
     )
         public
@@ -86,6 +88,18 @@ contract Group is IMetaTx, ICommon, UsingExternalStorage
     }
 
     // internal functions 
+
+    /**
+     * @dev Creates a group with sender address and metadata. 
+     * @dev Sets sender as role[0] as group creator with highest permissions. 
+     * 
+     * @dev Reverts if: 
+     *      - neither params are provided
+     * 
+     * @param _sender msg.sender OR ecrecovered address from meta-tx
+     * @param _metadataLocator IPFS hash for locating metadata
+     */
+
     function createGroup(
         address _sender, 
         bytes32 _metadataLocator
@@ -93,38 +107,48 @@ contract Group is IMetaTx, ICommon, UsingExternalStorage
         internal
         returns (bool)
     {
-        uint existingCommunityStatus = storageContract.getUintValue(
-            keccak256(
-                abi.encodePacked(
-                    GROUP_KEY, sequence
-                )
-            )
+        // set group to ENABLED status 
+        storageContract.putBooleanValue(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "ENABLED")),  // key (bytes32)
+            true                                                // value (bool)
+        );
+        
+        // set groupId as sequence (uint256)
+        storageContract.putUintValue(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "groupStruct", "groupId")),   // key (bytes32)
+            sequence                                                            // value (uint256)
         );
 
-        require(existingCommunityStatus == 0);
-
-        storageContract.putBooleanValue(keccak256(
-            abi.encodePacked(GROUP_KEY, sequence, "active")), true);
-
+        // set metadataLocator to group "struct"
         storageContract.putBytes32Value(keccak256(
-            abi.encodePacked(GROUP_KEY, sequence, "group", "metadataLocator")), _metadataLocator);
+            abi.encodePacked(GROUP_KEY, sequence, "groupStruct", "metadataLocator")), _metadataLocator
+        );
 
-        storageContract.putAddressValue(keccak256(
-            abi.encodePacked(GROUP_KEY, sequence, "group", "groupOwner")), _sender);
-
-        storageContract.putBytes32Value(keccak256(
-            abi.encodePacked(GROUP_KEY, sequence, "group", "members", "first"), "usernamehere"));
-
-        storageContract.putBytes32Value(keccak256(
-            abi.encodePacked(GROUP_KEY, sequence, "group", "members", "second"), "usernamehere"));
-
-        // TODO: set group members (admins and curators)
-
+        // emit GroupCreated event 
         emit GroupCreated(sequence, _sender);
+
+        // set groupCreator as sender
+        storageContract.putAddressValue(keccak256(
+            abi.encodePacked(GROUP_KEY, sequence, "groupStruct", "groupCreator")), _sender
+        );
+
+        // add sender as creator + as an admin (do this in a separate method)
+        addMember(sequence, _sender, admin); // groupCreator automatically set to 1
 
         sequence++;
 
         return true;
+    }
+
+    function addMember(uint256 _groupId, address _sender, uint8 _role)
+        internal
+        returns (bool)
+    {
+        storageContract.putUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId)), _role // uint8 is type converted to uint256 here
+        ); 
+
+        emit MemberAdded(_sender, _groupId, _role);
     }
     
     function getSigner(bytes32 _msg, bytes memory _signature, uint256 _nonce)
@@ -133,8 +157,8 @@ contract Group is IMetaTx, ICommon, UsingExternalStorage
     {
         address signer = recoverSignature(_msg, _signature);
         
-        require(signer != address(0), "cannot recover signature");
-        require(_nonce == nonces[signer], "wrong nonce");
+        require(signer != address(0), "unable to recover signature");
+        require(_nonce == nonces[signer], "incorrect nonce");
         
         nonces[signer]++;
         
@@ -169,7 +193,12 @@ contract Group is IMetaTx, ICommon, UsingExternalStorage
         }
         
         address sender = ecrecover(
-            _hash,
+            keccak256(
+                abi.encodePacked(
+                    "\x19Ethereum Signed Message:\n32",
+                    _hash
+                )
+            ),
             v, 
             r, 
             s
@@ -178,7 +207,8 @@ contract Group is IMetaTx, ICommon, UsingExternalStorage
     }
 
     // events
-    event GroupCreated(uint256 sequence, address groupOwner);
+    event GroupCreated(uint256 indexed groupId, address indexed groupOwner);
+    event MemberAdded(address indexed member, uint256 indexed groupId, uint8 indexed role);
     
 }
 

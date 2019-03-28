@@ -124,13 +124,15 @@ contract Storage is StorageI, Permissioned {
     function getAddressValue(bytes32 key) 
         public 
         view 
-        returns(address) {
+        returns(address) 
+    {
         return addressValues[key];
     }
 
     function putAddressValue(bytes32 key, address value) 
         public 
-        // hasWriteAccess {
+        // hasWriteAccess 
+    {
         addressValues[key] = value;
     }
 
@@ -143,7 +145,8 @@ contract Storage is StorageI, Permissioned {
 
     function putBooleanValue(bytes32 key, bool value) 
         public 
-        // hasWriteAccess {
+        // hasWriteAccess 
+    {
         booleanValues[key] = value;
     }
 
