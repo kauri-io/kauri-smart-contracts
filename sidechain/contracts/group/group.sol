@@ -2,14 +2,13 @@ pragma solidity ^0.5.6;
 
 import '../common/UsingExternalStorage.sol';
 
-// TODO: move interfaces to own file
 interface IGroupMetaTx
 {
     function prepareCreateGroup(bytes32 _metadataLocator, uint256 _nonce) external view returns (bytes32);
     function createGroup(bytes32 _metadataLocator, bytes calldata _signature, uint256 _nonce) external returns (bool);
 }
 
-interface IGroupCommon // can we include both functions in one interface, function overloading
+interface IGroupCommon 
 {
     function createGroup(bytes32 _metadataLocator) external returns (bool);
 }
@@ -23,8 +22,6 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
     
     // role constants 
     uint8   constant admin        = 1;
-    uint8   constant moderator    = 2;
-    uint8   constant supermoderator = 3;
     uint8[] public   roles;
     
     mapping(address => uint256) public nonces;
@@ -34,15 +31,13 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
         
     constructor(
         // make sure there's at least one role: the creator
-        uint8[] memory _roles
+        uint8[] memory _additionalRoles
     )
         public
     {
-        roles = _roles;
-        sequence = 0;
+        roles = _additionalRoles;
     }
     
-    // meta functions 
     function prepareCreateGroup(
         bytes32 _metadataLocator, 
         uint256 _nonce
@@ -61,7 +56,6 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
             );
     }
     
-    // interface: IMetaTx
     function createGroup(
         bytes32 _metadataLocator, 
         bytes memory _signature, 
@@ -86,8 +80,6 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
 
         return createGroup(sender, _metadataLocator);
     }
-
-    // internal functions 
 
     /**
      * @dev Creates a group with sender address and metadata. 
@@ -121,7 +113,8 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
 
         // set metadataLocator to group "struct"
         storageContract.putBytes32Value(keccak256(
-            abi.encodePacked(GROUP_KEY, sequence, "groupStruct", "metadataLocator")), _metadataLocator
+            abi.encodePacked(GROUP_KEY, sequence, "groupStruct", "metadataLocator")), 
+            _metadataLocator
         );
 
         // emit GroupCreated event 
@@ -129,10 +122,10 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
 
         // set groupCreator as sender
         storageContract.putAddressValue(keccak256(
-            abi.encodePacked(GROUP_KEY, sequence, "groupStruct", "groupCreator")), _sender
+            abi.encodePacked(GROUP_KEY, sequence, "groupStruct", "groupCreator")), 
+            _sender
         );
 
-        // add sender as creator + as an admin (do this in a separate method)
         addMember(sequence, _sender, admin); // groupCreator automatically set to 1
 
         sequence++;
