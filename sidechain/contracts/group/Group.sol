@@ -1,10 +1,9 @@
 pragma solidity ^0.5.6;
 
-import './IGroupMetaTx.sol';
-import './IGroupCommon.sol';
+import './GroupI.sol';
 import '../common/UsingExternalStorage.sol';
 
-contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
+contract Group is GroupI, UsingExternalStorage
 {
     /*
      *  Constants for hashing storage keys
@@ -205,7 +204,7 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
         returns (bool)
     {
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId)), 
+            abi.encodePacked(MEMBER_KEY, _groupId, _sender)), 
             _role
         ); 
 
@@ -290,21 +289,5 @@ contract Group is IGroupMetaTx, IGroupCommon, UsingExternalStorage
         );
         return sender;
     }
-
-    /*************************
-     *  Events
-     *************************/
-
-    event GroupCreated(
-        uint256 indexed groupId, 
-        address indexed groupOwner, 
-        bytes32 metadataLocator     // we feel metadataLocator does not need indexing
-    ); 
-
-    event MemberAdded(
-        address indexed member, 
-        uint256 indexed groupId, 
-        uint8 indexed role
-    );
 }
 

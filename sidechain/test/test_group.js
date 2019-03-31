@@ -1,10 +1,10 @@
-const Group = artifacts.require("Group.sol");
-const EthUtil = require('ethereumjs-util');
-const assertRevert = require('./helpers/assertRevert').assertRevert;
+const Group = artifacts.require("./group/Group.sol");
+
+const catchRevert = require('./exceptions.js').catchRevert;
+const EthUtil =     require('ethereumjs-util');
 
 let groupInstance;
 
-let testaccount = accounts[3];
 let testprivkey = 'bf39003e4f743a750efeb7a230aa551dca1dda0c359e9e50dc3a4fc8275f7f8c'; // accounts[3] ganache-cli
 
 contract('Group', async accounts => {
@@ -31,11 +31,10 @@ contract('Group', async accounts => {
         let hash            = await instance.prepareCreateGroup(metadataLocator, incorrectNonce);
         let sig             = await sign(testprivkey, hash);
         
-        let newGroup        = await instance.createGroup(metadataLocator, sig, incorrectNonce);
-        let newSequence     = await instance.sequence.call();
-
-        assert.equal(newSequence, 1);
+        await catchRevert(instance.createGroup(metadataLocator, sig, incorrectNonce));
     })
+
+    it('should emit a GroupCreated event after group creation', )
 });
 
 async function sign(pk, message) {
@@ -45,3 +44,7 @@ async function sign(pk, message) {
 
     return signatureRPC;
 };
+
+function redeploy(deployer, testFunction) {
+    var 
+}
