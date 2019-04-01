@@ -1,4 +1,7 @@
-language: node
+dist: xenial
+language: node_js
+node_js:
+  - "10.15.3"
 sudo: false
 services:
 - docker
@@ -11,8 +14,25 @@ cache:
   directories:
   - "$HOME/google-cloud-sdk/"
 before_install:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then openssl aes-256-cbc -K $encrypted_57c9ae68dfc1_key -iv $encrypted_57c9ae68dfc1_iv
-  -in credentials.tar.gz.enc -out credentials.tar.gz -d; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+   openssl aes-256-cbc -K $encrypted_57c9ae68dfc1_key -iv $encrypted_57c9ae68dfc1_iv -in credentials.tar.gz.enc -out credentials.tar.gz -d;
+  fi
+# Create environment variable for correct distribution
+- export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)"
+# Add the Cloud SDK distribution URI as a package source
+- echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+# Import the Google Cloud Platform public key
+- curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+# Update the package list and install the Cloud SDK
+- sudo apt-get update && sudo apt-get install google-cloud-sdk kubectl
+- gcloud --quiet version
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+    tar -xzf credentials.tar.gz;
+  fi
+- mkdir -p lib
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+    gcloud auth activate-service-account --key-file client-secret.json;
+  fi
 - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu
   $(lsb_release -cs) stable"
@@ -26,28 +46,25 @@ before_install:
 - export AUTHOR_NAME="$(git log -1 $TRAVIS_COMMIT --pretty="%aN")"
 - git config --global user.name "Travis CI User"
 - git config --global user.email "user@example.com"
-- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
-  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
-- source /home/travis/google-cloud-sdk/path.bash.inc
-- gcloud --quiet version
-- gcloud --quiet components update
-- gcloud --quiet components update kubectl
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then tar -xzf credentials.tar.gz; fi
-- mkdir -p lib
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
-  --key-file client-secret.json; fi
+# Workaround for invalid GPG keys for MongoDB, CouchDB, and git-lfs
+- sudo rm -f /etc/apt/sources.list.d/mongodb*
+- sudo rm -f /etc/apt/sources.list.d/couchdb*
+- sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 762E3157
+- sudo add-apt-repository ppa:ethereum/ethereum -y
+- sudo apt-get update
+- sudo apt-get install build-essential -y
+- sudo apt-get install gcc g++ libssl-dev libudev-dev pkg-config
+- curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+- sudo apt-get install -y nodejs
+- rm -rf node_modules
 after_install:
 - docker kill $(docker ps -q)
 jobs:
   include:
   - stage: solidity-tests
     install:
-    - docker-compose -f docker/docker-compose-truffle-test.yml build
-    - docker-compose -f docker/docker-compose-truffle-test.yml up -d
-    - docker-compose -f docker/docker-compose-truffle-coverage.yml build
-    - docker-compose -f docker/docker-compose-truffle-coverage.yml up -d
-    - docker ps
-    - docker exec -it docker_truffle-test_1 npm install
+    - npm install
+    - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     script:
     - travis/runTests.sh
     after_success:
@@ -136,13 +153,11 @@ jobs:
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
     - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
-    - docker-compose -f docker/docker-compose-truffle-build.yml build
-    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
-    - docker ps
-    - docker exec -it docker_truffle-build_1 npm install
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install -g ganache-cli@6.2.3 truffle@5.0.1; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations.sh; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi

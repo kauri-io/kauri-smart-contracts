@@ -1,1 +1,11 @@
-output=$(docker exec -it docker_truffle-coverage_1 npm run coverage | tee /dev/tty)
+#!/bin/bash
+
+set -e
+
+ganache-cli  /dev/null 1> /dev/null &
+sleep 5 # to make sure ganache-cli is up and running before compiling
+rm -rf build
+cp secrets.json mainchain/.
+cd mainchain
+npm run coverage
+kill -9 $(lsof -t -i:8545)

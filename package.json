@@ -1,22 +1,20 @@
 {
   "name": "kauri-smart-contracts",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Kauri protocol for incentivisation of knowledge creation",
   "scripts": {
-    "compile": "truffle compile",
-    "deploy-rinkeby": "truffle migrate --network rinkeby",
-    "deploy-k8sdev": "truffle migrate --network k8sdev",
-    "test": "truffle test",
     "coverage": "./node_modules/.bin/solidity-coverage"
   },
   "author": "Craig Williams <craig.williams@consensys.net>",
   "dependencies": {
+    "any-promise": "1.3.0",
+    "bindings": "1.5.0",
     "bs58": "4.0.1",
-    "truffle": "4.1.14",
-    "truffle-hdwallet-provider": "0.0.7-beta.0",
-    "ethereumjs-wallet": "0.6.0",
     "ethereumjs-util": "5.2.0",
-    "openzeppelin-solidity": "1.12.0"
+    "ethereumjs-wallet": "0.6.0",
+    "openzeppelin-solidity": "1.12.0",
+    "truffle": "5.0.1",
+    "truffle-hdwallet-provider": "1.0.5"
   },
   "devDependencies": {
     "coveralls": "^3.0.2",
