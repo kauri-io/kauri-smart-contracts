@@ -22,7 +22,8 @@
  const fs = require('fs');
 
  let secrets;
- let mnemonic = '';
+ //default mnemonic for PR tets
+ let mnemonic = 'tackle empty earn lobster limit pyramid junior gym swallow brick buffalo polar';
 
  if (fs.existsSync('../secrets.json')) {
    secrets = JSON.parse(fs.readFileSync('../secrets.json', 'utf8'));
