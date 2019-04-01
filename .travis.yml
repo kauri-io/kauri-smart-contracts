@@ -61,17 +61,20 @@ after_install:
 - docker kill $(docker ps -q)
 jobs:
   include:
-  - stage: solidity-tests
+  - stage: solidity-tests-mainchain
     install:
-    - npm install
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
+    - cd mainchain
+    - npm install
     script:
-    - travis/runTests.sh
-    after_success:
-    - rm -rf node_modules
-    - docker exec -it docker_truffle-coverage_1 npm install
-    - travis/runCoverage.sh
-    - cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+    - ../travis/runTests.sh
+  - stage: solidity-tests-sidechain
+    install:
+    - npm install -g ganache-cli@6.2.3 truffle@5.0.1
+    - cd sidechain
+    - npm install
+    script:
+    - ../travis/runTests.sh
   - stage: git-tag
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
