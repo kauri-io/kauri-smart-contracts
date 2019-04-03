@@ -14,6 +14,7 @@ ADD ./docker/.scripts/api.js /scripts/api.js
 RUN chmod +x /scripts/run.sh
 
 ADD mainchain/build /project/.
+ADD sidechain/build /project/sidechain/.
 ADD mainchain/build .
 
 ####################################################################################################################

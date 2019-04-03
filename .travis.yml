@@ -68,13 +68,13 @@ jobs:
     - npm install
     script:
     - ../travis/runTests.sh
-  - stage: solidity-tests-sidechain
-    install:
-    - npm install -g ganache-cli@6.2.3 truffle@5.0.1
-    - cd sidechain
-    - npm install
-    script:
-    - ../travis/runTests.sh
+  # - stage: solidity-tests-sidechain
+  #   install:
+  #   - npm install -g ganache-cli@6.2.3 truffle@5.0.1
+  #   - cd sidechain
+  #   - npm install
+  #   script:
+  #   - ../travis/runTests.sh
   - stage: git-tag
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
@@ -108,18 +108,17 @@ jobs:
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
     - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
-    - docker-compose -f docker/docker-compose-truffle-build.yml build
-    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
-    - docker ps
-    - docker exec -it docker_truffle-build_1 npm install
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - echo $SMART_CONTRACTS_VERSION
-    - bash ./k8s/run_migrations.sh
+    - npm install
+    - npm install -g ganache-cli@6.2.3 truffle@5.0.1
+    - bash ./k8s/run_migrations_mainchain.sh
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION
     - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
     - kubectl delete pods -l app=web3-auth
+    - sleep 30000
     - kubectl delete pods -l app=monolith
   - stage: deploy-dev2
     if: "(NOT type IN (pull_request) AND (branch = dev2))"
@@ -130,20 +129,18 @@ jobs:
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
-    - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
-    - docker-compose -f docker/docker-compose-truffle-build.yml build
-    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
-    - docker ps
-    - docker exec -it docker_truffle-build_1 npm install
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - echo $SMART_CONTRACTS_VERSION
-    - bash ./k8s/run_migrations.sh
+    - npm install
+    - npm install -g ganache-cli@6.2.3 truffle@5.0.1
+    - bash ./k8s/run_migrations_mainchain.sh
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
     - bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
     # Restart middleware pods
     - kubectl delete pods -l app=web3-auth
+    - sleep 30000
     - kubectl delete pods -l app=monolith
   - stage: deploy-dev
     if: "(NOT env(AUTHOR_NAME) =~ ^Travis AND (NOT type IN (pull_request)) AND (branch
@@ -162,8 +159,9 @@ jobs:
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install -g ganache-cli@6.2.3 truffle@5.0.1; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations.sh; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations_mainchain.sh; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30000; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
