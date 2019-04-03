@@ -118,7 +118,7 @@ jobs:
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION
     - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
     - kubectl delete pods -l app=web3-auth
-    - sleep 30000
+    - sleep 30
     - kubectl delete pods -l app=monolith
   - stage: deploy-dev2
     if: "(NOT type IN (pull_request) AND (branch = dev2))"
@@ -140,7 +140,7 @@ jobs:
     - bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
     # Restart middleware pods
     - kubectl delete pods -l app=web3-auth
-    - sleep 30000
+    - sleep 30
     - kubectl delete pods -l app=monolith
   - stage: deploy-dev
     if: "(NOT env(AUTHOR_NAME) =~ ^Travis AND (NOT type IN (pull_request)) AND (branch
@@ -163,5 +163,5 @@ jobs:
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30000; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
