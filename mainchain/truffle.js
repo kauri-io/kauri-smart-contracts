@@ -2,11 +2,10 @@ const HDWalletProvider = require('truffle-hdwallet-provider');
 const fs = require('fs');
 
 let secrets;
-//default mnemonic for PR tets
-let mnemonic = 'tackle empty earn lobster limit pyramid junior gym swallow brick buffalo polar';
+let mnemonic = '';
 
-if (fs.existsSync('../secrets.json')) {
-  secrets = JSON.parse(fs.readFileSync('../secrets.json', 'utf8'));
+if (fs.existsSync('secrets.json')) {
+  secrets = JSON.parse(fs.readFileSync('secrets.json', 'utf8'));
   mnemonic = secrets.mnemonic;
 }
 

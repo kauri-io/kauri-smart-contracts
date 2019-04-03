@@ -14,6 +14,7 @@ else
   exit 1
 fi
 
+cp secrets.json mainchain/.
 cd mainchain
 
 if [ "${MIGRATION_MODE}" == "reset" ]; then
