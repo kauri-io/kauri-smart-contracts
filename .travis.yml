@@ -115,6 +115,7 @@ jobs:
     - npm install
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     - bash ./k8s/run_migrations_mainchain.sh
+    - bash ./k8s/run_migrations_sidechain.sh
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION
     - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
     - kubectl delete pods -l app=web3-auth
@@ -136,6 +137,7 @@ jobs:
     - npm install
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     - bash ./k8s/run_migrations_mainchain.sh
+    - bash ./k8s/run_migrations_sidechain.sh
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
     - bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
     # Restart middleware pods
@@ -160,6 +162,7 @@ jobs:
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install -g ganache-cli@6.2.3 truffle@5.0.1; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations_mainchain.sh; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations_sidechain.sh; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
