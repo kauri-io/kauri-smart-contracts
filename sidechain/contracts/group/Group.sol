@@ -20,8 +20,7 @@ contract Group is GroupI, UsingExternalStorage
     uint8[] public   roles;
 
     /*
-     *  Nonce mapping and sequence (groupId)
-     */ 
+     *  Nonce mapping and sequence (groupId) */ 
     
     mapping(address => uint256) public nonces;
     uint256 public sequence; 
@@ -266,9 +265,9 @@ contract Group is GroupI, UsingExternalStorage
         }
         
         assembly {
-            r := mload(add(_signature, 0x20))
-            s := mload(add(_signature, 0x40))
-            v := byte(0, mload(add(_signature, 0x60)))
+            r := mload(add(_signature, 0x20)) 
+            s := mload(add(_signature, 0x40)) 
+            v := byte(0, mload(add(_signature, 0x60))) 
         }
         
         if (v < 27) {
@@ -277,17 +276,64 @@ contract Group is GroupI, UsingExternalStorage
         }
         
         address sender = ecrecover(
-            keccak256(
-                abi.encodePacked(
-                    "\x19Ethereum Signed Message:\n32",
-                    _hash
-                )
-            ),
+            prefixed(_hash),
             v, 
             r, 
             s
         );
         return sender;
     }
+
+    function prefixed(
+        bytes32 _hash
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
+    }
+
+    /////////////////////////
+    //
+    //  invitation logic
+    //
+
+    function inviteUserToGroupSignature(
+        uint256 _groupId, 
+        uint8   _role,
+        bytes32 _secretHash,
+        uint256 _nonce
+    )
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(_groupId, _role, _secretHash, _nonce));
+    }
+
+    function inviteToCommunity(
+        uint256 _groupId, 
+        uint8   _role,
+        bytes32 _secretHash,
+        bytes memory _signature,
+        uint256 _nonce
+    )
+        public
+        returns (bool) // the doc says return txHash, so we'll wait for tx receipt?
+    {
+        address _signer = getSigner(_secretHash, _signature, _nonce);
+        addMember(_groupId, _signer, _role);
+        emit InvitationPending(_groupId, _role, _secretHash);
+        return true;
+    }
+
+    /////////////////////////
+    //
+    //  invitation events
+    //
+
+    event InvitationPending(uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
+    event AcceptedCommit(bytes32 addressSecretHash);
 }
 

@@ -52,13 +52,14 @@ contract Storage is StorageI, Permissioned {
 
     function putUintValue(bytes32 key, uint value) 
         public 
+        hasWriteAccess 
     {
         uintValues[key] = value;
     }
 
     function incrementUintValue(bytes32 key, uint amount) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
         returns(uint) 
     {
         uintValues[key] = uintValues[key].add(amount);
@@ -67,7 +68,7 @@ contract Storage is StorageI, Permissioned {
 
     function decrementUintValue(bytes32 key, uint amount) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
         returns(uint) 
     {
         uintValues[key] = uintValues[key].sub(amount);
@@ -114,7 +115,7 @@ contract Storage is StorageI, Permissioned {
 
     function putBytes32Value(bytes32 key, bytes32 value) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
     {
         bytes32Values[key] = value;
     }
@@ -131,7 +132,7 @@ contract Storage is StorageI, Permissioned {
 
     function putAddressValue(bytes32 key, address value) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
     {
         addressValues[key] = value;
     }
@@ -145,7 +146,7 @@ contract Storage is StorageI, Permissioned {
 
     function putBooleanValue(bytes32 key, bool value) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
     {
         booleanValues[key] = value;
     }
@@ -161,7 +162,7 @@ contract Storage is StorageI, Permissioned {
 
     function putBundleAValues(bytes32 key, address value1, uint64 value2, uint32 value3) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
     {
         bundleAValues[key] = BundleA(value1, value2, value3);
     }
@@ -178,21 +179,21 @@ contract Storage is StorageI, Permissioned {
 
     function setBundleAValue1(bytes32 key, address value) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
     {
         bundleAValues[key].value1 = value;
     }
 
     function setBundleAValue2(bytes32 key, uint64 value) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
     {
         bundleAValues[key].value2 = value;
     }
 
     function setBundleAValue3(bytes32 key, uint32 value) 
         public 
-        // hasWriteAccess 
+        hasWriteAccess 
     {
         bundleAValues[key].value3 = value;
     }

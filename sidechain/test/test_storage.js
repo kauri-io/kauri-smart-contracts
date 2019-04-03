@@ -6,11 +6,11 @@ var Storage = artifacts.require('Storage.sol');
 
 contract('Storage', function(accounts) {
   const writer = 5;
-  const keyOne = "keyOne";
-  const keyTwo = "keyTwo";
-  const keyThree = "keyThree";
-  const keyFour = "keyFour";
-  const keyFive = "keyFive"
+  const keyOne = web3.utils.toHex("keyOne");
+  const keyTwo = web3.utils.toHex("keyTwo");
+  const keyThree = web3.utils.toHex("keyThree");
+  const keyFour = web3.utils.toHex("keyFour");
+  const keyFive = web3.utils.toHex("keyFive");
 
   let storage;
 
