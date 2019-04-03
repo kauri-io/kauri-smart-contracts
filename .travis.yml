@@ -112,7 +112,6 @@ jobs:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - echo $SMART_CONTRACTS_VERSION
-    - npm install
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     - bash ./k8s/run_migrations_mainchain.sh
     - bash ./k8s/run_migrations_sidechain.sh
@@ -134,7 +133,6 @@ jobs:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - echo $SMART_CONTRACTS_VERSION
-    - npm install
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     - bash ./k8s/run_migrations_mainchain.sh
     - bash ./k8s/run_migrations_sidechain.sh
@@ -158,7 +156,6 @@ jobs:
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install -g ganache-cli@6.2.3 truffle@5.0.1; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations_mainchain.sh; fi
