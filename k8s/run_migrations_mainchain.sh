@@ -15,6 +15,7 @@ else
 fi
 
 cd mainchain
+npm install
 
 if [ "${MIGRATION_MODE}" == "reset" ]; then
   migrationParameters="--reset"
