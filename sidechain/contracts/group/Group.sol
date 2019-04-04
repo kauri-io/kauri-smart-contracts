@@ -299,7 +299,7 @@ contract Group is GroupI, UsingExternalStorage
     //  invitation logic
     //
 
-    function inviteUserToGroupSignature(
+    function prepareInviteUserToGroup(
         uint256 _groupId, 
         uint8   _role,
         bytes32 _secretHash,
