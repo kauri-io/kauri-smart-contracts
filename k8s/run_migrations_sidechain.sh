@@ -17,21 +17,21 @@ fi
 cd sidechain
 npm install
 
-# if [ "${MIGRATION_MODE}" == "reset" ]; then
-#   migrationParameters="--reset"
-# else
-#     echo Upgrading KauriCore
-#     docker run -d --name kauri-contract-abis ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
-#     mkdir build
-#     docker cp kauri-contract-abis:/project/sidechain/contracts build/
-#     docker stop kauri-contract-abis
-#     docker rm kauri-contract-abis
-#     if [ -f build/contracts/Group.json ]; then
-#       migrationParameters="-f 3"
-#     else
-#       echo Unable to upgrade as Group.json not found, deploying all
-#     fi
-# fi
+if [ "${MIGRATION_MODE}" == "reset" ]; then
+  migrationParameters="--reset"
+else
+    echo Upgrading KauriCore
+    docker run -d --name kauri-contract-abis ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+    mkdir build
+    docker cp kauri-contract-abis:/project/sidechain/contracts build/
+    docker stop kauri-contract-abis
+    docker rm kauri-contract-abis
+    if [ -f build/contracts/Group.json ]; then
+      migrationParameters="-f 3"
+    else
+      echo Unable to upgrade as Group.json not found, deploying all
+    fi
+fi
 
 output=$(truffle migrate --network ${network} $migrationParameters | tee /dev/tty)
 GROUP_ADDRESS=$(echo "$output" | grep '^Group address:' | sed 's/Group address: //' | sed $'s@\r@@g')
