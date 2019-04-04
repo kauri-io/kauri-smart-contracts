@@ -41,13 +41,13 @@ router.get('/:contractName/all', function(req, res) {
 });
 
 router.get('/sidechain/:contractName', function(req, res) {
-	var truffleArtefact = JSON.parse(fs.readFileSync('/project/contracts/sidechain/'+req.params.contractName+'.json', 'utf8'));
+	var truffleArtefact = JSON.parse(fs.readFileSync('/project/sidechain/contracts/'+req.params.contractName+'.json', 'utf8'));
 	var contractAddress = truffleArtefact.networks[Object.keys(truffleArtefact.networks)[0]].address;
     res.json({ "name": req.params.contractName, "address": contractAddress });
 });
 
 router.get('/sidechain/:contractName/all', function(req, res) {
-	var truffleArtefact = JSON.parse(fs.readFileSync('/project/contracts/sidechain/'+req.params.contractName+'.json', 'utf8'));
+	var truffleArtefact = JSON.parse(fs.readFileSync('/project/sidechain/contracts/'+req.params.contractName+'.json', 'utf8'));
     res.json(truffleArtefact);
 });
 
