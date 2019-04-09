@@ -1,7 +1,7 @@
 'use strict';
 (async () => {
 
-    const Group = artifacts.require("Group.sol");
+    const Group                 = artifacts.require("Group.sol");
     const Storage               = artifacts.require("Storage.sol");
     const AdminController       = artifacts.require("OnlyOwnerAdminController.sol");
 
@@ -36,12 +36,6 @@
             let hash            = await groupInstance.prepareCreateGroup(METADATA_HASH, nonce);
             let sig             = await web3.eth.sign(hash, web3.utils.toChecksumAddress(accounts[0]));
             let newGroup        = await groupInstance.createGroup(METADATA_HASH, sig, nonce);
-            let newSequence     = await groupInstance.sequence.call();
-
-            assert.equal(
-                newSequence, 
-                1
-            );
 
         });
 
@@ -145,27 +139,64 @@
         // invitation testing
         //
 
-        it('should return message hash for member invitation', async () => {
+        it('should prepare an invitation', async () => {
             let groupId         = 0;
-            let role            = 2;
+            let role            = 1;
             let secret          = web3.utils.toHex('1337');
             let secretHash      = web3.utils.sha3(secret);
             let nonce           = await groupInstance.nonces.call(accounts[0]);
-            let inviteCreated   = await groupInstance.inviteUserToGroupSignature(
+
+            let inviteCreated   = await groupInstance.prepareInvitation(
+                groupId,
+                role,
+                secretHash,
+                nonce
+            );
+        })
+
+        it('should emit an InvitationPending event on successful invite storage', async () => {
+            let groupId         = 0;
+            let role            = 1;
+            let secret          = web3.utils.toHex('1337');
+            let secretHash      = web3.utils.sha3(secret);
+            let nonce           = await groupInstance.nonces.call(accounts[0]);
+
+            let inviteHash      = await groupInstance.prepareInvitation(
                 groupId,
                 role,
                 secretHash,
                 nonce
             );
 
-            assert.equal(msgHash, setMsgHash);
-        });
+            let sig             = await web3.eth.sign(inviteHash, web3.utils.toChecksumAddress(accounts[0]));
+            let inviteStored    = await groupInstance.storeInvitation(
+                groupId,
+                role,
+                secretHash,
+                sig,
+                nonce
+            );
 
-        it('should emit InvitationPending event after sending tx', async () => {
-            let test1 = 0;
-            let test2 = 1;
+            const logInvStored  = inviteStored.logs[0];
 
-            assert.equal(test1, test2);
+            assert.equal(
+                logInvStored.event, 
+                "InvitationPending", 
+                "storeInvitation() call did not log 1 event"
+            );
+
+            assert.equal(
+                logInvStored.args.groupId, 
+                0, 
+                "storeInvitation() sequence does not match 0"
+            );
+
+            assert.equal(
+                logInvStored.args.groupId, 
+                0, 
+                "groupId is incorrect"
+            );
+
         });
 
         it('should add new member upon receipt of acceptInvitationCommit', async () => {
