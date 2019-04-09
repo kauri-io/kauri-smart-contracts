@@ -3,7 +3,7 @@ let Storage                     = artifacts.require('Storage');
 let OnlyOwnerAdminController    = artifacts.require('OnlyOwnerAdminController');
 
 async function performMigration(deployer, network, accounts) {
-    await deployer.deploy(Group, []);
+    await deployer.deploy(Group, [2]);
     
     let deployedStorage = await Storage.deployed();
 

@@ -82,7 +82,7 @@
             let nonce           = await groupInstance.nonces.call(accounts[0]);
             let hash            = await groupInstance.prepareCreateGroup(METADATA_HASH, nonce);
             let sig             = await web3.eth.sign(hash, web3.utils.toChecksumAddress(accounts[0]));
-            let groupCreated = await groupInstance.createGroup(METADATA_HASH, sig, nonce);
+            let groupCreated    = await groupInstance.createGroup(METADATA_HASH, sig, nonce);
 
             const logGroupCreated = groupCreated.logs[0];
 
