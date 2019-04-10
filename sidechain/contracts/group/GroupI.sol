@@ -134,6 +134,6 @@ interface GroupI
 
     event InvitationPending(uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
     event InvitationRevoked(uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
-    event AcceptCommitted(bytes32 indexed addressSecretHash);
+    event AcceptCommitted(uint256 indexed groupId, bytes32 indexed addressSecretHash);
 
 }

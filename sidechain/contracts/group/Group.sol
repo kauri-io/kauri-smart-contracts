@@ -505,7 +505,7 @@ contract Group is GroupI, UsingExternalStorage
         commits[sender].block       = uint64(block.number);
         commits[sender].revealed    = false;
 
-        emit AcceptCommitted(_addressSecretHash);
+        emit AcceptCommitted(_groupId, _addressSecretHash);
         return true;
     }
 
