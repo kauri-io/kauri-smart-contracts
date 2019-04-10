@@ -476,7 +476,9 @@ contract Group is GroupI, UsingExternalStorage
      */ 
 
     function prepareAcceptInvitationCommit(
-        bytes32 _addressSecretHash
+        uint256 _groupId,
+        bytes32 _addressSecretHash,
+        uint256 _nonce
     )
         public
         pure 
@@ -489,17 +491,19 @@ contract Group is GroupI, UsingExternalStorage
         uint256         _groupId,
         bytes32         _addressSecretHash,
         bytes memory    _signature,
-        address         _sender
-        // uint256 _nonce
+        uint256         _nonce
     )
         public
         returns (bool)
     {
-        commits[_sender].id          = _groupId;
-        commits[_sender].commit      = _addressSecretHash;
-        commits[_sender].sig         = _signature;
-        commits[_sender].block       = uint64(block.number);
-        commits[_sender].revealed    = false;
+        // get sender by retrieving from signature
+        address sender = getSigner(_addressSecretHash, _signature, _nonce);
+
+        commits[sender].id          = _groupId;
+        commits[sender].commit      = _addressSecretHash;
+        commits[sender].sig         = _signature;
+        commits[sender].block       = uint64(block.number);
+        commits[sender].revealed    = false;
 
         emit AcceptCommitted(_addressSecretHash);
     }

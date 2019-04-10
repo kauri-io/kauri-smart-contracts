@@ -63,7 +63,9 @@ interface GroupI
         returns (bool);
 
     function prepareAcceptInvitationCommit(
-        bytes32 _addressSecretHash
+        uint256 _groupId,
+        bytes32 _addressSecretHash,
+        uint256 _nonce
     )
         external
         pure 
@@ -73,7 +75,7 @@ interface GroupI
         uint256 _groupId, 
         bytes32 _addressSecretHash, 
         bytes calldata _signature, 
-        address _sender
+        uint256 _nonce
     )
         external
         returns (bool);
