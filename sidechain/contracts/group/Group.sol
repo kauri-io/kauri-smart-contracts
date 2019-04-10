@@ -352,6 +352,12 @@ contract Group is GroupI, UsingExternalStorage
             getSigner(_secretHash, _signature, _nonce)
         );
 
+        // store secretHash so it can be checked later
+        storageContract.putBytes32Value(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SECRET_HASH")), 
+            _secretHash
+        );
+
         // set role
         storageContract.putUintValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "ROLE")), 
@@ -386,7 +392,7 @@ contract Group is GroupI, UsingExternalStorage
         uint256 _nonce
     )
         public
-        view
+        pure 
         returns (bytes32)
     {
         return keccak256(abi.encodePacked(_groupId, _secretHash, _nonce));
@@ -397,7 +403,7 @@ contract Group is GroupI, UsingExternalStorage
      *  Accepting an Invitation
      */ 
 
-    function acceptInvitationCommitSignature(
+    function prepareAcceptInvitationCommit(
         bytes32 _addressSecretHash
     )
         public
@@ -407,23 +413,96 @@ contract Group is GroupI, UsingExternalStorage
         return keccak256(abi.encodePacked(_addressSecretHash));
     }
 
-//    function acceptInvitationCommit(
-//        uint256 _groupId,
-//        bytes32 _addressSecretHash,
-//        bytes memory _signature,
-//        uint256 _nonce
-//    )
-//        public
-//    {
-//        uint256 currentState = storageContract.getUintValue(keccak256(
-//            abi.encodePacked(INVITATION_KEY, _groupId, keccak256(_addressSecretHash, ))
-//        ))
-//    }
+    struct Commit
+    {
+        uint256 id;
+        bytes32 commit;
+        bytes   sig;
+        uint64  block;
+        bool    revealed;
+    }
 
-    /////////////////////////
-    //
-    //  invitation events
-    //
+    mapping(address => Commit) public commits;
+
+    function acceptInvitationCommit(
+        uint256         _groupId,
+        bytes32         _addressSecretHash,
+        bytes memory    _signature,
+        address         _sender
+        // uint256 _nonce
+    )
+        public
+    {
+        commits[_sender].id          = _groupId;
+        commits[_sender].commit      = _addressSecretHash;
+        commits[_sender].sig         = _signature;
+        commits[_sender].block       = uint64(block.number);
+        commits[_sender].revealed    = false;
+
+        emit AcceptedCommit(_addressSecretHash);
+    }
+
+    function acceptInvitation(
+        uint256 _groupId,
+        bytes32 _secret,
+        address _sender
+    )
+        public
+        returns (bool)
+    {
+        // assign reference to ephemeral Commit struct
+        Commit storage tempCommit = commits[_sender];
+        
+        // i don't like that '_secret' is hashed to get 'secretHash' here
+        // certain there's a better way, but for right now i'm using this solution
+        bytes32 secretHash      = storageContract.getBytes32Value(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "SECRET_HASH")
+        ));
+
+        // retrieve expiration date from ext. storage 
+        uint expirationDate     = storageContract.getUintValue(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, _secret, "EXPIRATION_DATE")
+        ));
+
+        // retrieve preset role for invited user from ext. storage
+        uint role               = storageContract.getUintValue(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, _secret, "ROLE")
+        ));
+
+        // verify that hashed '_secret' == 'secretHash'
+        require(
+            keccak256(abi.encodePacked(_secret))                == secretHash, 
+            "hashed provided 'secret' does not match stored 'secretHash'"
+        );
+
+        // verify that hashed '_secret + sender address' == 'addressSecretHash'
+        require(
+            keccak256(abi.encodePacked(_secret, _sender))   == tempCommit.commit, 
+            "provided hashed '_secret + sender address does not match 'addressSecretHash"
+        );
+        
+        // require current block to be greater than block the commit was recorded
+        require(block.number > tempCommit.block);
+
+        // require current time to be before the expiration date
+        require(block.timestamp < expirationDate);
+        
+        // require that temporary commit is not already revealed
+        require(!tempCommit.revealed);
+
+        // then set to revealed
+        tempCommit.revealed = true;
+
+        // implicit conversion from uint256 -> uint8 for 'role'
+        addMember(_groupId, _sender, uint8(role));
+
+        // not necessary to return anything, but will keep for now
+        return true;
+    }
+
+    /*
+     *  Invitation Events
+     */ 
 
     event InvitationPending(uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
     event AcceptedCommit(bytes32 addressSecretHash);

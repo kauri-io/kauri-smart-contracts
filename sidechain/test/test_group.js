@@ -17,6 +17,12 @@
     let storageInstance;
     let adminController;
 
+    const groupId               = 0;
+    const adminRole             = 1;
+    const subordinateRole       = 2;
+    const secret                = web3.utils.toHex('1337');
+    const secretHash            = web3.utils.sha3(secret);
+
     contract('Group', async accounts => {
 
         beforeEach(async () => {
@@ -134,10 +140,9 @@
 
         });
 
-        ///////////////////////////////////
-        //
-        // invitation testing
-        //
+        /*
+         *  Invitation Testing
+         */ 
 
         it('should prepare an invitation', async () => {
             let groupId         = 0;
@@ -199,11 +204,16 @@
 
         });
 
-        it('should add new member upon receipt of acceptInvitationCommit', async () => {
-            let test1 = 0;
-            let test2 = 1;
+        it('should store an invitation', async () => {
+            let sig       = await web3.eth.sign(secretHash, web3.utils.toChecksumAddress(accounts[0]));
+            let storedInv = await groupInstance.storeInvitation(
+                groupId,
+                subordinateRole,
+                secretHash,
+                sig,
+                0
+            );
 
-            assert.equal(test1, test2);
         })
 
     });
