@@ -8,7 +8,7 @@ contract Group is GroupI, UsingExternalStorage
     /*
      *  Constants for hashing storage keys
      */ 
-
+    
     string  constant GROUP_KEY      = "COMMUNITY";
     string  constant MEMBER_KEY     = "MEMBER";
     string  constant INVITATION_KEY = "INVITATION";
@@ -25,16 +25,27 @@ contract Group is GroupI, UsingExternalStorage
      *  Nonce mapping and sequence (groupId) 
      */ 
     
-     mapping(address => uint256) public nonces;
-     mapping(address => bytes32) public temporaryInvitation;
+    mapping(address => uint256) public nonces;
+    mapping(address => bytes32) public temporaryInvitation;
+
+    struct Commit
+    {
+        uint256 id;
+        bytes32 commit;
+        bytes   sig;
+        uint64  block;
+        bool    revealed;
+    }
+
+    mapping(address => Commit) public commits;
 
      /*
       * Enum for Invitation State
       */ 
-
-     enum InvitationState { Pending, Revoked, Accepted }
-     InvitationState InvState;
-     InvitationState constant defaultState = InvitationState.Pending;
+    
+    enum InvitationState { Pending, Revoked, Accepted }
+    InvitationState InvState;
+    InvitationState constant defaultState = InvitationState.Pending;
 
     /*************************
      *  Constructor 
@@ -232,6 +243,56 @@ contract Group is GroupI, UsingExternalStorage
 
         emit MemberAdded(_sender, _groupId, _role);
     }
+
+    function prepareRemoveMember(
+        uint256 _groupId,
+        address _accountToRemove,
+        uint256 _nonce
+    )
+        public
+        view
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(_groupId));
+    }
+
+    function removeMember(
+        uint256 _groupId,
+        address _accountToRemove,
+        bytes memory _signature,
+        uint256 _nonce
+    )
+        public
+        returns (bool)
+    {
+        return true;
+    }
+
+    function prepareChangeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _role,
+        uint256 _nonce
+    )
+        public
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(_groupId)); // just placeholder return for right now
+        // fix later
+    }
+
+    function changeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        bytes memory _signature,
+        uint8 _role,
+        uint256 _nonce
+    )
+        public
+        returns (bool)
+    {
+        return true;
+    }
     
     /*
      *  @dev Calls recoverSignature function
@@ -386,7 +447,7 @@ contract Group is GroupI, UsingExternalStorage
      */ 
 
     // prepare to revoke a pending invitation
-    function prepareRevocation(
+    function prepareRevokeInvitation(
         uint256 _groupId,
         bytes32 _secretHash,
         uint256 _nonce
@@ -398,6 +459,17 @@ contract Group is GroupI, UsingExternalStorage
         return keccak256(abi.encodePacked(_groupId, _secretHash, _nonce));
     }
     
+    function revokeInvitation(
+        uint256 _groupId,
+        bytes32 _secretHash,
+        bytes memory _signature,
+        uint256 _nonce
+    )
+        public
+        returns (bool)
+    {
+        return true;
+    }
 
     /*
      *  Accepting an Invitation
@@ -413,17 +485,6 @@ contract Group is GroupI, UsingExternalStorage
         return keccak256(abi.encodePacked(_addressSecretHash));
     }
 
-    struct Commit
-    {
-        uint256 id;
-        bytes32 commit;
-        bytes   sig;
-        uint64  block;
-        bool    revealed;
-    }
-
-    mapping(address => Commit) public commits;
-
     function acceptInvitationCommit(
         uint256         _groupId,
         bytes32         _addressSecretHash,
@@ -432,6 +493,7 @@ contract Group is GroupI, UsingExternalStorage
         // uint256 _nonce
     )
         public
+        returns (bool)
     {
         commits[_sender].id          = _groupId;
         commits[_sender].commit      = _addressSecretHash;
@@ -439,7 +501,7 @@ contract Group is GroupI, UsingExternalStorage
         commits[_sender].block       = uint64(block.number);
         commits[_sender].revealed    = false;
 
-        emit AcceptedCommit(_addressSecretHash);
+        emit AcceptCommitted(_addressSecretHash);
     }
 
     function acceptInvitation(
@@ -499,12 +561,5 @@ contract Group is GroupI, UsingExternalStorage
         // not necessary to return anything, but will keep for now
         return true;
     }
-
-    /*
-     *  Invitation Events
-     */ 
-
-    event InvitationPending(uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
-    event AcceptedCommit(bytes32 addressSecretHash);
 }
 

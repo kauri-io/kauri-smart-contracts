@@ -213,10 +213,10 @@
                 sig,
                 0
             );
-
-        })
-
+        });
     });
+
+    async function getKeccak()
 
     async function sign(pk, message) {
         var msgHash = EthUtil.hashPersonalMessage(new Buffer(message));
