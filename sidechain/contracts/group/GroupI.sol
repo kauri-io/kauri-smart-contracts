@@ -119,7 +119,7 @@ interface GroupI
     function changeMemberRole(
         uint256 _groupId,
         address _accountToChange,
-        bytes32 _signature,
+        bytes calldata _signature,
         uint8   _role,
         uint256 _nonce
     )

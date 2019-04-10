@@ -506,6 +506,7 @@ contract Group is GroupI, UsingExternalStorage
         commits[sender].revealed    = false;
 
         emit AcceptCommitted(_addressSecretHash);
+        return true;
     }
 
     function acceptInvitation(
