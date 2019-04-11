@@ -230,18 +230,18 @@ contract Group is GroupI, UsingExternalStorage
 
     function addMember(
         uint256 _groupId, 
-        address _sender, 
+        address _memberToAdd, 
         uint8 _role
     )
         internal
         returns (bool)
     {
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, _sender)), 
+            abi.encodePacked(MEMBER_KEY, _groupId, _memberToAdd)), 
             _role
         ); 
 
-        emit MemberAdded(_sender, _groupId, _role);
+        emit MemberAdded(_memberToAdd, _groupId, _role);
     }
 
     function prepareRemoveMember(
@@ -253,18 +253,45 @@ contract Group is GroupI, UsingExternalStorage
         view
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(_groupId));
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "removeMember",
+                _accountToRemove,
+                _nonce
+            )
+        );
     }
 
     function removeMember(
         uint256 _groupId,
         address _accountToRemove,
+        bytes32 _secretHash,
         bytes memory _signature,
         uint256 _nonce
     )
         public
         returns (bool)
     {
+        uint256 signerRole = storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, getSigner(_secretHash, _signature, _nonce)))
+        );
+
+        require(uint8(signerRole) == admin);
+
+        // retrieving previous role to populate MemberRemoved event
+        uint256 prevRole = storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _accountToRemove))
+        );
+
+        // now set member's role to 0
+        storageContract.putUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _accountToRemove)), 
+            0 
+        ); 
+
+        emit MemberRemoved(_groupId, _accountToRemove, uint8(prevRole));
+
         return true;
     }
 
@@ -277,20 +304,48 @@ contract Group is GroupI, UsingExternalStorage
         public
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(_groupId)); // just placeholder return for right now
-        // fix later
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "changeMemberRole",
+                _accountToChange,
+                _role,
+                _nonce
+            )
+        );
     }
 
     function changeMemberRole(
         uint256 _groupId,
         address _accountToChange,
+        bytes32 _secretHash,
         bytes memory _signature,
-        uint8 _role,
+        uint8 _newRole,
         uint256 _nonce
     )
         public
         returns (bool)
     {
+        uint256 signerRole = storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, getSigner(_secretHash, _signature, _nonce)))
+        );
+
+        require(uint8(signerRole) == admin);
+
+        // retrieving previous role to populate MemberRemoved event
+        uint256 prevRole = storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _accountToChange))
+        );
+
+        // now set member's role to 0
+        storageContract.putUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _accountToChange)), 
+            0 
+        ); 
+
+        emit MemberRoleChanged(
+            _groupId, _accountToChange, _newRole, uint8(prevRole));
+
         return true;
     }
     
@@ -393,7 +448,15 @@ contract Group is GroupI, UsingExternalStorage
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(_groupId, _role, _secretHash, _nonce));
+        return keccak256(
+            abi.encodePacked(
+                _groupId, 
+                "storeInvitation", // for sig uniqueness
+                _role, 
+                _secretHash, 
+                _nonce
+            )
+        );
     }
 
     // store invitation 
@@ -456,7 +519,14 @@ contract Group is GroupI, UsingExternalStorage
         pure 
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(_groupId, _secretHash, _nonce));
+        return keccak256(
+            abi.encodePacked(
+                _groupId, 
+                "revokeInvitation",
+                _secretHash, 
+                _nonce
+            )
+        );
     }
     
     function revokeInvitation(
@@ -468,6 +538,17 @@ contract Group is GroupI, UsingExternalStorage
         public
         returns (bool)
     {
+        uint256 signerRole = storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, getSigner(_secretHash, _signature, _nonce)))
+        );
+
+        require(uint8(signerRole) == admin);
+
+        storageContract.putUintValue(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE")),
+            uint(InvitationState.Revoked)
+        );
+
         return true;
     }
 
@@ -484,7 +565,14 @@ contract Group is GroupI, UsingExternalStorage
         pure 
         returns (bytes32)
     {
-        return keccak256(abi.encodePacked(_addressSecretHash));
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "acceptInvitationCommit",
+                _addressSecretHash,
+                _nonce
+            )
+        );
     }
 
     function acceptInvitationCommit(
@@ -520,8 +608,7 @@ contract Group is GroupI, UsingExternalStorage
         // assign reference to ephemeral Commit struct
         Commit storage tempCommit = commits[_sender];
         
-        // i don't like that '_secret' is hashed to get 'secretHash' here
-        // certain there's a better way, but for right now i'm using this solution
+        // retrieve secretHash
         bytes32 secretHash      = storageContract.getBytes32Value(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "SECRET_HASH")
         ));
@@ -544,7 +631,7 @@ contract Group is GroupI, UsingExternalStorage
 
         // verify that hashed '_secret + sender address' == 'addressSecretHash'
         require(
-            keccak256(abi.encodePacked(_secret, _sender))   == tempCommit.commit, 
+            keccak256(abi.encodePacked(_secret, _sender))       == tempCommit.commit, 
             "provided hashed '_secret + sender address does not match 'addressSecretHash"
         );
         

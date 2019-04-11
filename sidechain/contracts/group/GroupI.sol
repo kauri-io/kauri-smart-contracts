@@ -100,6 +100,7 @@ interface GroupI
     function removeMember(
         uint256 _groupId,
         address _acountToRemove,
+        bytes32 _secretHash,
         bytes calldata _signature,
         uint256 _nonce
     )
@@ -119,6 +120,7 @@ interface GroupI
     function changeMemberRole(
         uint256 _groupId,
         address _accountToChange,
+        bytes32 _secretHash,
         bytes calldata _signature,
         uint8   _role,
         uint256 _nonce
@@ -126,14 +128,24 @@ interface GroupI
         external
         returns (bool);
 
-    event GroupCreated(uint256 indexed groupId, address indexed groupOwner, bytes32 metadataLocator);
-    event MemberAdded(address indexed member, uint256 indexed groupId, uint8 indexed role);
-    event MemberRemoved(address indexed member, uint256 indexed groupId, uint8 indexed role);
-    event MemberRoleChanged(
-        address indexed member, uint256 indexed groupId, uint8 indexed newRole, uint8 oldRole);
+    // group events
+    event GroupCreated(
+        uint256 indexed groupId, address indexed groupOwner, bytes32 metadataLocator);
 
-    event InvitationPending(uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
-    event InvitationRevoked(uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
-    event AcceptCommitted(uint256 indexed groupId, bytes32 indexed addressSecretHash);
+    // member events
+    event MemberAdded(
+        address indexed member, uint256 indexed groupId, uint8 indexed role);
+    event MemberRemoved(
+        uint256 indexed groupId, address indexed member, uint8 indexed role);
+    event MemberRoleChanged(
+        uint256 indexed groupId, address indexed member, uint8 indexed newRole, uint8 oldRole);
+
+    // invitation events
+    event InvitationPending(
+        uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
+    event InvitationRevoked(
+        uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
+    event AcceptCommitted(
+        uint256 indexed groupId, bytes32 indexed addressSecretHash);
 
 }
