@@ -51,7 +51,7 @@ module.exports = {
       host: "eth-node",
       port: 8545,
       network_id: "*",
-      gas: 4600000,
+      gas: 6000000,
       gasPrice: 21000000000
     },
     sokol: {
