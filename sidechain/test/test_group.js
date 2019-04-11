@@ -204,19 +204,40 @@
 
         });
 
-        it('should store an invitation', async () => {
-            let sig       = await web3.eth.sign(secretHash, web3.utils.toChecksumAddress(accounts[0]));
+        it('should store an invitation with correct recovered address', async () => {
+            let nonce       = await groupInstance.nonces.call(accounts[0]);
+            let msgHash     = await groupInstance.prepareInvitation(
+                groupId,
+                subordinateRole,
+                secretHash,
+                nonce
+            );
+
+            let sig         = await web3.eth.sign(
+                msgHash, web3.utils.toChecksumAddress(accounts[0])
+            );
+
             let storedInv = await groupInstance.storeInvitation(
                 groupId,
                 subordinateRole,
                 secretHash,
                 sig,
-                0
+                nonce
             );
-        });
-    });
 
-    async function getKeccak()
+            let prefix = new Buffer("\x19Ethereum Signed Message:\n32");
+            let res = EthUtil.fromRpcSig(sig);
+            let msgBuf = EthUtil.toBuffer(msgHash);
+            let prefixedMsgBuf = EthUtil.sha3(Buffer.concat([prefix, msgBuf]));
+            let pub = EthUtil.ecrecover(prefixedMsgBuf, res.v, res.r, res.s);
+            let addrBuf = EthUtil.publicToAddress(pub);
+            let addr    = EthUtil.bufferToHex(addrBuf);
+
+            assert.equal(accounts[0], addr);
+                
+        })
+
+    });
 
     async function sign(pk, message) {
         var msgHash = EthUtil.hashPersonalMessage(new Buffer(message));

@@ -67,6 +67,12 @@ contract Group is GroupI, UsingExternalStorage
         for (uint i = 0; i < roles.length; i++) 
         {
             require(roles[i] > 1);
+
+            // store additional roles in a mapping
+//            storageContract.putBooleanValue(keccak256(
+//                abi.encodePacked("ADDITIONAL_ROLES", roles[i])),
+//                true
+//            );
         }
     }
     
@@ -95,7 +101,7 @@ contract Group is GroupI, UsingExternalStorage
             abi.encodePacked(
                 address(this), 
                 "createGroup", 
-                _metadataLocator, 
+                _metadataLocator,
                 _nonce 
                 )
             );
@@ -120,8 +126,14 @@ contract Group is GroupI, UsingExternalStorage
         public
         returns (bool)
     {
-        bytes32 hash = prepareCreateGroup(_metadataLocator, _nonce);
-        address signer = getSigner(hash, _signature, _nonce);
+        address signer = getSigner(
+            prepareCreateGroup(
+                _metadataLocator,
+                _nonce
+            ),
+            _signature, 
+            _nonce
+        );
 
         return createGroup(signer, _metadataLocator);
     }
@@ -266,15 +278,28 @@ contract Group is GroupI, UsingExternalStorage
     function removeMember(
         uint256 _groupId,
         address _accountToRemove,
-        bytes32 _secretHash,
         bytes memory _signature,
         uint256 _nonce
     )
         public
         returns (bool)
     {
-        uint256 signerRole = storageContract.getUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, getSigner(_secretHash, _signature, _nonce)))
+        uint256 signerRole = storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    MEMBER_KEY, 
+                    _groupId, 
+                    getSigner(
+                        prepareRemoveMember(
+                            _groupId, 
+                            _accountToRemove, 
+                            _nonce
+                        ), 
+                        _signature, 
+                        _nonce
+                    )
+                )
+            )
         );
 
         require(uint8(signerRole) == admin);
@@ -302,6 +327,7 @@ contract Group is GroupI, UsingExternalStorage
         uint256 _nonce
     )
         public
+        view 
         returns (bytes32)
     {
         return keccak256(
@@ -318,16 +344,30 @@ contract Group is GroupI, UsingExternalStorage
     function changeMemberRole(
         uint256 _groupId,
         address _accountToChange,
-        bytes32 _secretHash,
-        bytes memory _signature,
         uint8 _newRole,
+        bytes memory _signature,
         uint256 _nonce
     )
         public
         returns (bool)
     {
-        uint256 signerRole = storageContract.getUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, getSigner(_secretHash, _signature, _nonce)))
+        uint256 signerRole = storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    MEMBER_KEY, 
+                    _groupId, 
+                    getSigner(
+                        prepareChangeMemberRole(    // retrieve msgHash
+                            _groupId,
+                            _accountToChange,  
+                            _newRole,
+                            _nonce
+                        ), 
+                        _signature, 
+                        _nonce
+                    )
+                )
+            )
         );
 
         require(uint8(signerRole) == admin);
@@ -473,7 +513,8 @@ contract Group is GroupI, UsingExternalStorage
         // recover signer, and set as address
         storageContract.putAddressValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")), 
-            getSigner(_secretHash, _signature, _nonce)
+            // msgHash from call to prepareInvitation()
+            getSigner(prepareInvitation(_groupId, _role, _secretHash, _nonce), _signature, _nonce)
         );
 
         // store secretHash so it can be checked later
@@ -538,9 +579,23 @@ contract Group is GroupI, UsingExternalStorage
         public
         returns (bool)
     {
-        uint256 signerRole = storageContract.getUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, getSigner(_secretHash, _signature, _nonce)))
-        );
+        uint256 signerRole = storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    MEMBER_KEY, 
+                    _groupId, 
+                    getSigner(
+                        prepareRevokeInvitation(
+                            _groupId, 
+                            _secretHash, 
+                            _nonce
+                        ), 
+                        _signature, 
+                        _nonce
+                    )
+                )
+            )
+        ); 
 
         require(uint8(signerRole) == admin);
 
@@ -585,7 +640,15 @@ contract Group is GroupI, UsingExternalStorage
         returns (bool)
     {
         // get sender by retrieving from signature
-        address sender = getSigner(_addressSecretHash, _signature, _nonce);
+        address sender = getSigner(
+            prepareAcceptInvitationCommit(
+                _groupId,
+                _addressSecretHash,
+                _nonce
+            ), 
+            _signature, 
+            _nonce
+        );
 
         commits[sender].id          = _groupId;
         commits[sender].commit      = _addressSecretHash;

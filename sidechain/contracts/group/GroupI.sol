@@ -100,7 +100,6 @@ interface GroupI
     function removeMember(
         uint256 _groupId,
         address _acountToRemove,
-        bytes32 _secretHash,
         bytes calldata _signature,
         uint256 _nonce
     )
@@ -115,14 +114,14 @@ interface GroupI
         uint256 _nonce
     )
         external
+        view
         returns (bytes32);
 
     function changeMemberRole(
         uint256 _groupId,
         address _accountToChange,
-        bytes32 _secretHash,
+        uint8   _newRole,
         bytes calldata _signature,
-        uint8   _role,
         uint256 _nonce
     )
         external
