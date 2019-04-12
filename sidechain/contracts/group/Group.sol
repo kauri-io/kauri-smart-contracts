@@ -375,10 +375,10 @@ contract Group is GroupI, UsingExternalStorage
             abi.encodePacked(MEMBER_KEY, _groupId, _accountToChange))
         );
 
-        // now set member's role to 0
+        // set member to new role
         storageContract.putUintValue(keccak256(
             abi.encodePacked(MEMBER_KEY, _groupId, _accountToChange)), 
-            0 
+            _newRole
         ); 
 
         emit MemberRoleChanged(
@@ -407,11 +407,21 @@ contract Group is GroupI, UsingExternalStorage
         returns (address)
     {
         address signer = recoverSignature(_msg, _signature);
+
+        uint256 nonce = storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked("nonces", signer))
+        );
         
         require(signer != address(0), "unable to recover signature");
         require(_nonce == nonces[signer], "incorrect nonce");
         
-        nonces[signer]++;
+        // increment signature nonce of signer by 1
+        storageContract.incrementUintValue(
+            keccak256(abi.encodePacked("nonces", signer)),
+            1
+        );
+        
         
         return signer;
     }
