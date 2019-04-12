@@ -1,5 +1,3 @@
-pragma solidity ^0.5.6;
-
 import './GroupI.sol';
 import '../common/UsingExternalStorage.sol';
 
@@ -673,17 +671,17 @@ contract Group is GroupI, UsingExternalStorage
         
         // retrieve secretHash
         bytes32 secretHash      = storageContract.getBytes32Value(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "SECRET_HASH")
-        ));
+            abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "SECRET_HASH"))
+        );
 
         // retrieve expiration date from ext. storage 
         uint expirationDate     = storageContract.getUintValue(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, _secret, "EXPIRATION_DATE")
-        ));
+            abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "EXPIRATION_DATE"))
+        );
 
         // retrieve preset role for invited user from ext. storage
         uint role               = storageContract.getUintValue(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, _secret, "ROLE")
+            abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "ROLE")
         ));
 
         // verify that hashed '_secret' == 'secretHash'

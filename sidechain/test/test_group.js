@@ -237,6 +237,29 @@
                 
         })
 
+        it('should store an invitation with correct recovered address', async () => {
+            let nonce       = await groupInstance.nonces.call(accounts[0]);
+            let msgHash     = await groupInstance.prepareInvitation(
+                groupId,
+                subordinateRole,
+                secretHash,
+                nonce
+            );
+
+            let sig         = await web3.eth.sign(
+                msgHash, web3.utils.toChecksumAddress(accounts[0])
+            );
+
+            let storedInv = await groupInstance.storeInvitation(
+                groupId,
+                subordinateRole,
+                secretHash,
+                sig,
+                nonce
+            );
+                
+        })
+
     });
 
     async function sign(pk, message) {
