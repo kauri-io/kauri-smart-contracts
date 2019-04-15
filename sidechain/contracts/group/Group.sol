@@ -1,3 +1,5 @@
+pragma solidity ^0.5.6;
+
 import './GroupI.sol';
 import '../common/UsingExternalStorage.sol';
 
@@ -66,12 +68,35 @@ contract Group is GroupI, UsingExternalStorage
         {
             require(roles[i] > 1);
 
+            // possible solution: create another function:
+            // 'setRoles()' and send them to external store
+            // can't do that in the constructor b/c of migrations
+            // in storeInvitation() we can then check role exists more easily
+
             // store additional roles in a mapping
+
 //            storageContract.putBooleanValue(keccak256(
 //                abi.encodePacked("ADDITIONAL_ROLES", roles[i])),
 //                true
 //            );
         }
+    }
+
+    function getNonce(
+        address _sender
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    "nonces",
+                    _sender
+                )
+            )
+        );
     }
     
     /*************************
@@ -518,6 +543,10 @@ contract Group is GroupI, UsingExternalStorage
         public
         returns (bool) 
     {
+//        uint role = storageContract.getUintValue(keccak256(
+//            abi.encodePacked(INVITATION_)
+//        ));
+
         // recover signer, and set as address
         storageContract.putAddressValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")), 
@@ -701,10 +730,10 @@ contract Group is GroupI, UsingExternalStorage
         );
 
         // verify that hashed '_secret + sender address' == 'addressSecretHash'
-        require(
-            keccak256(abi.encodePacked(_secret, _sender))       == tempCommit.commit, 
-            "provided hashed '_secret + sender address does not match 'addressSecretHash"
-        );
+        //require(
+        //    keccak256(abi.encodePacked(_secret, _sender))       == tempCommit.commit, 
+        //    "provided hashed '_secret + sender address does not match 'addressSecretHash"
+        //);
         
         // require current block to be greater than block the commit was recorded
         require(block.number > tempCommit.block);
@@ -724,5 +753,16 @@ contract Group is GroupI, UsingExternalStorage
         // not necessary to return anything, but will keep for now
         return true;
     }
+
+    function getKeccak(
+        bytes32 _input
+    )
+        public
+        view
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(_input));
+    }
+
 }
 
