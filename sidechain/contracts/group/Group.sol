@@ -68,6 +68,7 @@ contract Group is GroupI, UsingExternalStorage
         {
             require(roles[i] > 1);
 
+
             // possible solution: create another function:
             // 'setRoles()' and send them to external store
             // can't do that in the constructor b/c of migrations
@@ -249,7 +250,6 @@ contract Group is GroupI, UsingExternalStorage
             1
         );
 
-        // call addMember internal function, emit MemberAdded event
         return true;
     }
 
@@ -439,14 +439,13 @@ contract Group is GroupI, UsingExternalStorage
         );
         
         require(signer != address(0), "unable to recover signature");
-        require(_nonce == nonces[signer], "incorrect nonce");
+        require(_nonce == nonce, "using incorrect nonce");
         
         // increment signature nonce of signer by 1
         storageContract.incrementUintValue(
             keccak256(abi.encodePacked("nonces", signer)),
             1
         );
-        
         
         return signer;
     }
@@ -547,6 +546,9 @@ contract Group is GroupI, UsingExternalStorage
 //            abi.encodePacked(INVITATION_)
 //        ));
 
+        // TODO: retrieve _sender, ensure they have admin permissions
+        // 
+
         // recover signer, and set as address
         storageContract.putAddressValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")), 
@@ -580,6 +582,7 @@ contract Group is GroupI, UsingExternalStorage
 
         // emit event
         emit InvitationPending(_groupId, _role, _secretHash);
+
         return true;
     }
 
@@ -640,6 +643,9 @@ contract Group is GroupI, UsingExternalStorage
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE")),
             uint(InvitationState.Revoked)
         );
+
+        // emit recovation event
+        emit InvitationRevoked(_groupId, uint8(signerRole), _secretHash);
 
         return true;
     }
