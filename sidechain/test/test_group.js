@@ -375,22 +375,22 @@
         });
 
         // it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
-        //   let nonce           = await getNonce(accounts[0]);
-        //   let secretHash    = await groupInstance.getKeccak(secret);
-        //   let inviteRevoked = await groupInstance.prepareRevokeInvitation(
-        //                                       groupId,
-        //                                       secretHash,
-        //                                       nonce
-        //                                     );
-        //
-        //   let logInviteRevoke           = inviteRevoked.logs[0];
-        //
-        //   assert.equal(
-        //     logInviteRevoke.event,
-        //     "revokeInvitation",
-        //     "invitation was not revoked"
-        //   );
-        //
+          // let nonce           = await getNonce(accounts[0]);
+          // let secretHash    = await groupInstance.getKeccak(secret);
+          // let inviteRevoked = await groupInstance.prepareRevokeInvitation(
+          //                                     groupId,
+          //                                     secretHash,
+          //                                     nonce
+          //                                   );
+          //
+          // let logInviteRevoke           = inviteRevoked.logs[0];
+
+          // assert.equal(
+          //   logInviteRevoke.event,
+          //   "revokeInvitation",
+          //   "invitation was not revoked"
+          // );
+
         // };
         //
         // it('should emit an MemberRemoved event when an invitation is revoked', async () => {
