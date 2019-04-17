@@ -68,38 +68,17 @@ contract Group is GroupI, UsingExternalStorage
         {
             require(roles[i] > 1);
 
-
-            // possible solution: create another function:
-            // 'setRoles()' and send them to external store
-            // can't do that in the constructor b/c of migrations
-            // in storeInvitation() we can then check role exists more easily
+            //TODO: fix this in migrations script
 
             // store additional roles in a mapping
 
-//            storageContract.putBooleanValue(keccak256(
-//                abi.encodePacked("ADDITIONAL_ROLES", roles[i])),
-//                true
-//            );
+            //storageContract.putBooleanValue(keccak256(
+            //    abi.encodePacked("ADDITIONAL_ROLES", roles[i])),
+            //    true
+            //);
         }
     }
 
-    function getNonce(
-        address _sender
-    )
-        public
-        view
-        returns (uint256)
-    {
-        return storageContract.getUintValue(
-            keccak256(
-                abi.encodePacked(
-                    "nonces",
-                    _sender
-                )
-            )
-        );
-    }
-    
     /*************************
      *  Public Functions
      *************************/
@@ -433,10 +412,11 @@ contract Group is GroupI, UsingExternalStorage
     {
         address signer = recoverSignature(_msg, _signature);
 
-        uint256 nonce = storageContract.getUintValue(
-            keccak256(
-                abi.encodePacked("nonces", signer))
-        );
+        //uint256 nonce = storageContract.getUintValue(
+        //    keccak256(abi.encodePacked("nonces", signer))
+        //);
+
+        uint256 nonce = getNonce(signer);
         
         require(signer != address(0), "unable to recover signature");
         require(_nonce == nonce, "using incorrect nonce");
@@ -549,6 +529,14 @@ contract Group is GroupI, UsingExternalStorage
         // TODO: retrieve _sender, ensure they have admin permissions
         // 
 
+        // retrieve enable value from external storage
+        bool enabled = storageContract.getBooleanValue(keccak256(
+            abi.encodePacked(GROUP_KEY, _groupId, "ENABLED"))
+        );
+
+        // require groupId to be enabled
+        require(enabled == true, "group is not enabled");
+      
         // recover signer, and set as address
         storageContract.putAddressValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")), 
@@ -760,15 +748,69 @@ contract Group is GroupI, UsingExternalStorage
         return true;
     }
 
+    /*
+     *  Utility Functions
+     */
+
+    // to be removed
     function getKeccak(
         bytes32 _input
     )
         public
-        view
+        pure
         returns (bytes32)
     {
         return keccak256(abi.encodePacked(_input));
     }
 
-}
+    function getNonce(
+        address _sender
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return storageContract.getUintValue(keccak256(
+            abi.encodePacked("nonces", _sender))
+        );
+    }
+    
+    function getRole(
+        uint256 _groupId,
+        address _addr
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _addr))
+        );
+    }
 
+    function isAdmin(
+        uint256 _groupId,
+        address _addr
+    )
+        public
+        view
+        returns (bool)
+    {
+        return storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _addr))
+        ) == admin;
+    }
+
+    function getInvitationState(
+        uint256 _groupId,
+        bytes32 _secretHash
+    )
+        public
+        view
+        returns (uint)
+        {
+            return storageContract.getUintValue(keccak256(
+                abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE"))
+            );
+        }
+}
