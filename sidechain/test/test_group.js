@@ -304,7 +304,7 @@
 
         });
 
-        it('should not allow an admin to add a zero address as an admin', async() => {
+        // it('should not allow an admin to add a zero address as an admin', async() => {
         // let newMemberAddress = 0;
         // let role = 1;
         // let nonce       = await groupInstance.nonces.call(accounts[0]);
@@ -322,7 +322,7 @@
         //   nonce
         // ))
 
-      });
+      // });
 
 
         it('should store an invitation in pending state', async () => {

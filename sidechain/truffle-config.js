@@ -63,7 +63,14 @@ module.exports = {
     poa: {
       provider: new HDWalletProvider(mnemonic, 'https://core.poa.network'),
       network_id: '99'
-    }
+    },
+    coverage: {
+    host: 'localhost',
+    network_id: '*',
+    port: 8555,
+    gas: 0xfffffffffff,
+    gasPrice: 0x01,
+  }
 
     // Another network with more advanced options...
     // advanced: {
