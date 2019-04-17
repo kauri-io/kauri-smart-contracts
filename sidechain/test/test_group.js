@@ -51,8 +51,8 @@
             let nonce           = await getNonce(accounts[0]);
 
             assert.equal(
-                nonce, 
-                0
+                nonce,          // retrieve empty storage key/value, which is 0
+                0               // 
             );
 
             let newGroup        = await stageNewGroup(accounts[0]);
@@ -326,6 +326,21 @@
 
         });
 
+        it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
+            // todo
+            // code from test on line 87 can be reused here
+        };
+
+        it('should emit an MemberRemoved event when an invitation is revoked', async () => {
+            // todo
+            // code from other event logging tests can be reused here
+            // same code
+        };
+
+        it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
+            // todo
+        };
+
         it('should change an existing member at admin request', async () => {
             await stageNewGroup(
                 accounts[0]
@@ -344,7 +359,7 @@
 
             assert.equal(
                 currentRole,
-                2
+                2// normal member
             );
 
             let newRoleHash     = await groupInstance.prepareChangeMemberRole(
@@ -365,7 +380,7 @@
 
             assert.equal(
                 newRole,
-                1
+                1   // admin
             );
 
         })
