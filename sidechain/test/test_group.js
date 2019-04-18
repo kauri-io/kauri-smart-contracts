@@ -55,7 +55,7 @@
 
             assert.equal(
                 nonce,          // retrieve empty storage key/value, which is 0
-                0               // 
+                0               //
             );
 
             let newGroup        = await stageNewGroup(accounts[0]);
@@ -71,18 +71,18 @@
         it('should fail to create a group because of incorrect nonce', async () => {
             let incorrectNonce  = 1;
             let hash            = await groupInstance.prepareCreateGroup(
-                METADATA_HASH, 
+                METADATA_HASH,
                 incorrectNonce
             );
             let sig             = await web3.eth.sign(
-                hash, 
+                hash,
                 web3.utils.toChecksumAddress(accounts[0])
             );
 
             await catchRevert(
                 groupInstance.createGroup(
-                    METADATA_HASH, 
-                    sig, 
+                    METADATA_HASH,
+                    sig,
                     incorrectNonce)
             );
         });
@@ -93,20 +93,20 @@
             let logGroupCreated     = groupCreated.logs[0];
 
             assert.equal(
-                logGroupCreated.event, 
-                "GroupCreated", 
+                logGroupCreated.event,
+                "GroupCreated",
                 "createGroup() call did not log 1 event"
             );
 
             assert.equal(
-                logGroupCreated.args.groupId, 
-                0, 
+                logGroupCreated.args.groupId,
+                0,
                 "createGroup() sequence does not match 0"
             );
 
             assert.equal(
-                logGroupCreated.args.groupOwner, 
-                accounts[0], 
+                logGroupCreated.args.groupOwner,
+                accounts[0],
                 "signer doesn't match event's groupOwner"
             );
 
@@ -118,20 +118,20 @@
             let logGroupCreated     = groupCreated.logs[1];
 
             assert.equal(
-                logGroupCreated.event, 
-                "MemberAdded", 
+                logGroupCreated.event,
+                "MemberAdded",
                 "createGroup() call did not log MemberAdded  event"
             );
 
             assert.equal(
-                logGroupCreated.args.groupId, 
-                0, 
+                logGroupCreated.args.groupId,
+                0,
                 "createGroup() sequence does not match 0"
             );
 
             assert.equal(
-                logGroupCreated.args.role, 
-                1, 
+                logGroupCreated.args.role,
+                1,
                 "member added role is not 1 (the default role)"
             );
 
@@ -139,7 +139,7 @@
 
         /*
          *  Invitation Testing
-         */ 
+         */
 
         it('should prepare an invitation', async () => {
             await stageNewGroup(accounts[0]);
@@ -165,20 +165,20 @@
             let logInvStored            = prepInv.logs[0];
 
             assert.equal(
-                logInvStored.event, 
-                "InvitationPending", 
+                logInvStored.event,
+                "InvitationPending",
                 "storeInvitation() call did not log 1 event"
             );
 
             assert.equal(
-                logInvStored.args.groupId, 
-                0, 
+                logInvStored.args.groupId,
+                0,
                 "storeInvitation() sequence does not match 0"
             );
 
             assert.equal(
-                logInvStored.args.groupId, 
-                0, 
+                logInvStored.args.groupId,
+                0,
                 "groupId is incorrect"
             );
 
@@ -207,7 +207,7 @@
                 sig,
                 nonce
             );
-            
+
             let prefix = new Buffer("\x19Ethereum Signed Message:\n32");
             let res = EthUtil.fromRpcSig(sig);
             let msgBuf = EthUtil.toBuffer(msgHash);
@@ -217,13 +217,40 @@
             let addr    = EthUtil.bufferToHex(addrBuf);
 
             assert.equal(EthUtil.toChecksumAddress(accounts[1]), EthUtil.toChecksumAddress(addr));
-                
+
         });
 
         it('should store an invitation', async () => {
             await stageNewGroup(accounts[0]);
             let invStored           = await stagePrepAndStoreInv(accounts[1]);
         });
+
+
+        it('should fail to store an invitation when provided incorrect nonce', async () => {
+          let incorrectNonce = 12423;
+          let  secretHash    = await groupInstance.getKeccak(secret);
+          let msgHash     = await stagePrepInvitation(
+              groupId,
+              subordinateRole,
+              secretHash,
+              incorrectNonce
+          );
+
+          let sig         = await web3.eth.sign(
+              msgHash, web3.utils.toChecksumAddress(accounts[0])
+          );
+
+          await catchRevert (
+              groupInstance.storeInvitation(
+                groupId,
+                subordinateRole,
+                secretHash,
+                sig,
+                incorrectNonce
+              )
+            );
+
+          });
 
         it('should add another member as an admin of the group', async () => {
             // stage new group, accounts[0] is admin
@@ -277,8 +304,29 @@
                 accounts[1],    // admin account
                 accounts[2]     // subordinate account
             );
-            
+
         });
+
+        // it('should not allow an admin to add a zero address as an admin', async() => {
+        // let newMemberAddress = 0;
+        // let role = 1;
+        // let nonce       = await groupInstance.nonces.call(accounts[0]);
+        //
+        // // let addNewMember = await groupInstance.addMember(
+        // //   groupId,
+        // //   newMemberAddress,
+        // //   nonce
+        // // )
+        //
+        // await catchRevert(groupInstance.prepareChangeMemberRole(
+        //   groupId,
+        //   newMemberAddress,
+        //   role,
+        //   nonce
+        // ))
+
+      // });
+
 
         it('should store an invitation in pending state', async () => {
             let addGroup            = stageNewGroup(accounts[3]);
@@ -310,9 +358,9 @@
             const secretHash    = await groupInstance.getKeccak(secret);
 
             let prepStageAndStore   = await stagePrepAndStoreInv(
-                accounts[1] 
+                accounts[1]
             );
-            
+
             let revoke              = await prepAndRevokeInvitation(
                 accounts[0]
             );
@@ -344,7 +392,7 @@
             );
 
             let sig             = await web3.eth.sign(
-                prepRevoke, 
+                prepRevoke,
                 web3.utils.toChecksumAddress(addr)
             );
 
@@ -362,16 +410,16 @@
         async function stageNewGroup(adminAddr) {
             let nonce           = await getNonce(adminAddr);
             let msgHash         = await groupInstance.prepareCreateGroup(
-                METADATA_HASH, 
+                METADATA_HASH,
                 nonce
             );
             let sig             = await web3.eth.sign(
-                msgHash, 
+                msgHash,
                 web3.utils.toChecksumAddress(adminAddr)
             );
             let newGroup        = await groupInstance.createGroup(
-                METADATA_HASH, 
-                sig, 
+                METADATA_HASH,
+                sig,
                 nonce
             );
 
@@ -438,7 +486,7 @@
             );
 
             let addrSecretHash  = await EthUtil.keccak256(
-                secret, 
+                secret,
                 addr
             );
 
