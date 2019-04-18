@@ -10,17 +10,17 @@ contract GroupConnector
      *  Create Group
      */ 
 
-    // without meta-tx
+    // TRANSACTION 
     function createGroup(
         bytes32 _metadataLocator 
     )
         public
         returns (bool)
     {
-        return groupLogic.createGroup(_metadataLocator);
+        return groupLogic.createGroup(msg.sender, _metadataLocator);
     }
 
-    // prepare hash for meta-tx
+    // PREPARE HASH FOR META-TRANSACTION
     function prepareCreateGroup(
         bytes32 _metadataLocator,
         uint256 _nonce
@@ -32,16 +32,37 @@ contract GroupConnector
         return groupLogic.prepareCreateGroup(_metadataLocator, _nonce);
     }
 
-    // meta-tx
+    // META-TRANSACTION
+    // signature / ecrecovering completed in GroupConnector
+    // Group.sol should just contain only business logic
     function createGroup(
         bytes32 _metadataLocator,
         bytes memory _signature,
-        uint256 _nonce
+        uint256 _nonce,
+        bytes32[] memory _secretHashes,
+        uint[] memory _assignedRoles,
+        uint[] memory _assignedNonces
     )
         public
         returns (bool)
     {
-        return groupLogic.createGroup(_metadataLocator, _signature, _nonce);
+        address signer = getSigner(
+            prepareCreateGroup(
+                _metadataLocator,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        return groupLogic.createGroup(
+            signer, 
+            _metadataLocator, 
+            _secretHashes, 
+            _assignedRoles
+        );
+        // + array []bytes32 secretHashes, array []uint of roles inlcuded in arguments
+        // loop for each secretHash, roles and call storeInvitation() with each of these arguments in logic
     }
 
     /*
@@ -254,6 +275,79 @@ contract GroupConnector
         returns (uint)
     {
         return groupLogic.getInvitationState(_groupId, _secretHash);
+    }
+
+    // getSigner (from Group.sol, need to move into folder)
+    function getSigner(
+        bytes32 _msg, 
+        bytes memory _signature, 
+        uint256 _nonce
+    )
+        internal
+        view 
+        returns (address)
+    {
+        address signer = recoverSignature(_msg, _signature);
+
+        uint256 nonce = getNonce(signer);
+        
+        require(signer != address(0), "unable to recover signature");
+        require(_nonce == nonce, "using incorrect nonce");
+        
+        // increment signature nonce of signer by 1
+        storageContract.incrementUintValue(
+            keccak256(abi.encodePacked("nonces", signer)),
+            1
+        );
+        
+        return signer;
+    }
+    
+    // recoverSignature()
+    function recoverSignature(
+        bytes32 _hash, 
+        bytes memory _signature
+    )
+        internal
+        pure
+        returns (address)
+    {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        
+        if (_signature.length != 65) {
+            return address(0);
+        }
+        
+        assembly {
+            r := mload(add(_signature, 0x20)) 
+            s := mload(add(_signature, 0x40)) 
+            v := byte(0, mload(add(_signature, 0x60))) 
+        }
+        
+        if (v < 27) {
+            v += 27;
+        
+        }
+        
+        address sender = ecrecover(
+            prefixed(_hash),
+            v, 
+            r, 
+            s
+        );
+        return sender;
+    }
+
+    function prefixed(
+        bytes32 _hash
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
     }
 
 }

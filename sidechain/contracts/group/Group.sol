@@ -3,7 +3,7 @@ pragma solidity ^0.5.6;
 import './GroupI.sol';
 import '../common/UsingExternalStorage.sol';
 
-contract Group is GroupI, UsingExternalStorage
+contract Group is GroupI, UsingExternalStorage 
 {
     /*
      *  Constants for hashing storage keys
@@ -21,10 +21,11 @@ contract Group is GroupI, UsingExternalStorage
     uint8[] public   roles;
     uint expirationPeriod           = 3 days;
 
-    /*
-     *  Nonce mapping and sequence (groupId) 
+    /* *  Nonce mapping and sequence (groupId) 
      */ 
     
+    // TODO: remove b/c it's been replaced with external storage
+    // it can't be removed right now because it's being used
     mapping(address => uint256) public nonces;
     mapping(address => bytes32) public temporaryInvitation;
 
@@ -124,10 +125,13 @@ contract Group is GroupI, UsingExternalStorage
     function createGroup(
         bytes32 _metadataLocator, 
         bytes memory _signature, 
-        uint256 _nonce
+        uint256 _nonce,
+        bytes32[] memory _secretHashes,
+        uint8[] memory _assignedRoles,
+        uint[] memory _assignedNonces
     )
         public
-        returns (bool)
+        returns (bytes32[] memory)
     {
         address signer = getSigner(
             prepareCreateGroup(
@@ -138,7 +142,13 @@ contract Group is GroupI, UsingExternalStorage
             _nonce
         );
 
-        return createGroup(signer, _metadataLocator);
+        return createGroup(
+            signer, 
+            _metadataLocator, 
+            _secretHashes, 
+            _assignedRoles, 
+            _assignedNonces
+        );
     }
     
     /*
@@ -154,20 +164,26 @@ contract Group is GroupI, UsingExternalStorage
      * @returns bool true when successful group creation
      */
 
+    // can be removed when we implement GroupConnector
     function createGroup(
-        bytes32 _metadataLocator
+        bytes32 _metadataLocator,
+        bytes32[] memory _secretHashes,
+        uint8[] memory _assignedRoles,
+        uint[] memory _assignedNonces
     )
         public
-        returns (bool)
+        returns (bytes32[] memory)
     {
         address sender = msg.sender;
 
-        return createGroup(sender, _metadataLocator);
+        return createGroup(
+            sender, 
+            _metadataLocator,
+            _secretHashes,
+            _assignedRoles,
+            _assignedNonces
+        );
     }
-
-    /*************************
-     *  Internal Functions
-     *************************/
 
     /*
      * @dev Creates a group with sender address and metadata. 
@@ -178,18 +194,30 @@ contract Group is GroupI, UsingExternalStorage
      * 
      * @param _sender msg.sender OR ecrecovered address from meta-tx
      * @param _metadataLocator IPFS hash for locating metadata
+     * @param _secretHashes array of secretHashes to be added as members
+     * @param _assignedRoles array of roles to be added as members
      */
 
     function createGroup(
         address _sender, 
-        bytes32 _metadataLocator
+        bytes32 _metadataLocator,
+        bytes32[] memory _secretHashes,
+        uint8[] memory _assignedRoles,
+        uint[] memory _assignedNonces
     )
-        internal
-        returns (bool)
+        public 
+        returns (bytes32[] memory)
     {
+
+        // require length of invites to be <= index 9 (10 total invs)
+        require(_secretHashes.length <= 9);
+        require(_assignedRoles.length <= 9);
+        require(_assignedNonces.length <= 9);
+
+        // require each dynamic array to be of same length
+        // require(_assignedRoles.length && _assignedNonces.length == _secretHashes.length);
+
         // moving groupId to external storage (as opposed to contract state var)
-        // TODO: does external storage need to be initialized to 0?
-        // AFAIK storage defaults at 0
         uint256 groupId = storageContract.getUintValue(keccak256(
             abi.encodePacked("groupId"))
         );
@@ -223,14 +251,41 @@ contract Group is GroupI, UsingExternalStorage
         
         addMember(groupId, _sender, admin); 
 
+        bytes32[] memory hashedInvs;
+        if (_secretHashes.length > 0)
+        {
+            for (uint i = 0; i < _secretHashes.length; i++) 
+            {
+                bytes32 tempInv = prepareInvitation(
+                    groupId,
+                    _assignedRoles[i],
+                    _secretHashes[i],
+                    _assignedNonces[i]
+                );
+
+                hashedInvs[i] = tempInv;
+
+                //bool successInvStored = storeInvitation(
+                //    groupId,
+                //    _assignedRoles[i],
+                //    _secretHashes[i],
+                //    _assignedNonces[i]
+                //);
+            }
+        }
+
         // increment groupId
         storageContract.incrementUintValue(keccak256(
             abi.encodePacked("groupId")),   
             1
         );
 
-        return true;
+        return hashedInvs;
     }
+
+    /*************************
+     *  Internal Functions
+     *************************/
 
     /*
      *  @dev Creates a new member
@@ -522,12 +577,7 @@ contract Group is GroupI, UsingExternalStorage
         public
         returns (bool) 
     {
-//        uint role = storageContract.getUintValue(keccak256(
-//            abi.encodePacked(INVITATION_)
-//        ));
-
         // TODO: retrieve _sender, ensure they have admin permissions
-        // 
 
         // retrieve enable value from external storage
         bool enabled = storageContract.getBooleanValue(keccak256(
@@ -744,7 +794,6 @@ contract Group is GroupI, UsingExternalStorage
         // implicit conversion from uint256 -> uint8 for 'role'
         addMember(_groupId, _sender, uint8(role));
 
-        // not necessary to return anything, but will keep for now
         return true;
     }
 
@@ -808,9 +857,9 @@ contract Group is GroupI, UsingExternalStorage
         public
         view
         returns (uint)
-        {
-            return storageContract.getUintValue(keccak256(
-                abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE"))
-            );
-        }
+    {
+        return storageContract.getUintValue(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE"))
+        );
+    }
 }

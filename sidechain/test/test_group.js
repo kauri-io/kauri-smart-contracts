@@ -19,9 +19,12 @@
     let storageInstance;
     let adminController;
 
+    // roles 
     const groupId               = 0;
     const adminRole             = 1;
     const subordinateRole       = 2;
+
+    // secret hashes
     const secret                = '0x1337';
 
     contract('Group', async accounts => {
@@ -325,65 +328,6 @@
             )
 
         });
-
-        it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
-            // todo
-            // code from test on line 87 can be reused here
-        };
-
-        it('should emit an MemberRemoved event when an invitation is revoked', async () => {
-            // todo
-            // code from other event logging tests can be reused here
-            // same code
-        };
-
-        it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
-            // todo
-        };
-
-        it('should change an existing member at admin request', async () => {
-            await stageNewGroup(
-                accounts[0]
-            );
-
-            const secretHash    = await groupInstance.getKeccak(secret);
-
-            let invAccepted     = stagePrepInvAndAccept(
-                groupId, 
-                subordinateRole, 
-                await getNonce(accounts[1]), 
-                accounts[1]
-            );
-
-            let currentRole      = await groupInstance.getRole.call(groupId, accounts[1]);
-
-            assert.equal(
-                currentRole,
-                2// normal member
-            );
-
-            let newRoleHash     = await groupInstance.prepareChangeMemberRole(
-                groupId,
-                accounts[1],
-                adminRole,
-                await getNonce(accounts[1])
-            );
-
-            let changeRole      = await groupInstance.changeMemberRole(
-                groupId,
-                accounts[1],
-                adminRole,
-                await getNonce(accounts[1])
-            );
-
-            let newRole         = await groupInstance.getRole.call(groupId, accounts[1]);
-
-            assert.equal(
-                newRole,
-                1   // admin
-            );
-
-        })
 
         async function getNonce(addr) {
             let nonce = await groupInstance.getNonce.call(addr);

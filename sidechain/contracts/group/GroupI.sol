@@ -13,16 +13,32 @@ interface GroupI
     function createGroup(
         bytes32 _metadataLocator, 
         bytes calldata _signature, 
-        uint256 _nonce
+        uint256 _nonce,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        uint[] calldata _assignedNonces
     ) 
         external 
-        returns (bool);
+        returns (bytes32[] memory);
 
     function createGroup(
-        bytes32 _metadataLocator
+        bytes32 _metadataLocator,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        uint[] calldata _assignedNonces
     )
         external
-        returns (bool);
+        returns (bytes32[] memory);
+
+    function createGroup(
+        address _sender,
+        bytes32 _metadataLocator,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        uint[] calldata _assignedNonces
+    )
+        external 
+        returns (bytes32[] memory);
 
     function prepareInvitation(
         uint256 _groupId, 
