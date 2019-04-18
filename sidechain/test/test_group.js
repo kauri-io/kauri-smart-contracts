@@ -225,6 +225,9 @@
 
         it('should fail to store an invitation when provided incorrect nonce', async () => {
           let incorrectNonce = 12423;
+
+          await stageNewGroup(accounts[0]);
+
           let  secretHash    = await groupInstance.getKeccak(secret);
           let msgHash     = await stagePrepInvitation(
               groupId,
@@ -293,6 +296,68 @@
             );
         });
 
+
+        //forever pending
+        it('should successfully change a member as an admin'), async() => {
+          await stageNewGroup(accounts[0]);
+
+          let prep = await prepareChangeMemberRole(
+            groupId,
+            accounts[2],
+            adminRole,
+            await getNonce(accounts[0])
+          )
+
+          await changeMemberRole(
+            groupId,
+            accounts[2],
+            adminRole,
+            prep,
+            await getNonce(accounts[0])
+          )
+        };
+
+        //forever pending
+        it('should fail to change a member as a non-admin'), async() => {
+          await stageNewGroup(accounts[0])
+
+          let prep = await prepareChangeMemberRole(
+            groupId,
+            accounts[2],
+            subordinateRole,
+            await getNonce(accounts[2])
+          )
+
+
+           await changeMemberRole(
+            groupId,
+            accounts[2],
+            adminRole,
+            prep,
+            await getNonce(accounts[2])
+          )
+
+        };
+
+        // it('should fail to change a member as an admin when provided incorrect nonce'), async() => {
+        //   await stageNewGroup(accounts[0]);
+        //
+        //   let prep = await prepareChangeMemberRole(
+        //     groupId,
+        //     accounts[2],
+        //     adminRole,
+        //     1239120)
+        //   )
+        //
+        //   await changeMemberRole(
+        //     groupId,
+        //     accounts[2],
+        //     adminRole,
+        //     prep,
+        //     1239120)
+        //   )
+        // };
+
         it('should fail to add another member if not admin of group', async () => {
             // stage new group, accounts[0] is admin
             let newGroup =          await stageNewGroup(accounts[0]);
@@ -304,25 +369,19 @@
 
         });
 
-        // it('should not allow an admin to add a zero address as an admin', async() => {
-        // let newMemberAddress = 0;
-        // let role = 1;
-        // let nonce       = await groupInstance.nonces.call(accounts[0]);
-        //
-        // // let addNewMember = await groupInstance.addMember(
-        // //   groupId,
-        // //   newMemberAddress,
-        // //   nonce
-        // // )
-        //
-        // await catchRevert(groupInstance.prepareChangeMemberRole(
-        //   groupId,
-        //   newMemberAddress,
-        //   role,
-        //   nonce
-        // ))
+        it('should not allow an admin to add a zero address as an admin', async() => {
 
-      // });
+          await stageNewGroup(accounts[0]);
+
+            catchRevert(stagePrepInvAndAccept(
+            groupId,
+            adminRole,
+            await getNonce("0x0000000000000000000000000000000000000000"),
+          "0x0000000000000000000000000000000000000000"
+          )
+        );
+      });
+
 
 
         it('should store an invitation in pending state', async () => {
@@ -374,22 +433,22 @@
 
         });
 
-        // it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
-          // let nonce           = await getNonce(accounts[0]);
-          // let secretHash    = await groupInstance.getKeccak(secret);
-          // let inviteRevoked = await groupInstance.prepareRevokeInvitation(
-          //                                     groupId,
-          //                                     secretHash,
-          //                                     nonce
-          //                                   );
-          //
-          // let logInviteRevoke           = inviteRevoked.logs[0];
-
-          // assert.equal(
-          //   logInviteRevoke.event,
-          //   "revokeInvitation",
-          //   "invitation was not revoked"
-          // );
+         it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
+        //   let nonce           = await getNonce(accounts[0]);
+        //   let secretHash    = await groupInstance.getKeccak(secret);
+        //   let inviteRevoked = await groupInstance.prepareRevokeInvitation(
+        //                                       groupId,
+        //                                       secretHash,
+        //                                       nonce
+        //                                     );
+        //
+        //   let logInviteRevoke           = inviteRevoked.logs[0];
+        //
+        //   assert.equal(
+        //     logInviteRevoke.event,
+        //     "revokeInvitation",
+        //     "invitation was not revoked"
+        });
 
         // };
         //
