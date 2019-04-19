@@ -223,6 +223,45 @@ contract GroupLogic is UsingExternalStorage, GroupI
     }
 
 
+    function revokeInvitation(
+        address _sender,
+        uint256 _groupId,
+        bytes32 _secretHash
+    )
+        internal
+        returns (bool)
+    {
+        uint256 signerRole = storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    MEMBER_KEY,
+                    _groupId,
+                    _sender
+                )
+            )
+        );
+
+        require(uint8(signerRole) == admin);
+
+        storageContract.putUintValue(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE")),
+            uint(InvitationState.Revoked)
+        );
+
+        // emit recovation event
+        emit InvitationRevoked(_groupId, uint8(signerRole), _secretHash);
+
+        return true;
+    }
+
+
+
+
+
+
+
+
+
     /*
      *  Utility Functions
      */

@@ -97,6 +97,50 @@ interface GroupI
         returns (bool);
 
 
+        
+
+    //////////////////////////////////////////////////////////////////
+    // REVOKE INVITATION
+    //////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX] prepareInvitation
+     * View function that generates a unique method call message for `prepareRevokeInvitation` in order to be signed and sent to a relayer so we can identify the original sender using ecrecover
+     */
+    function prepareRevokeInvitation(
+        uint256 _groupId,
+        bytes32 _secretHash,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32);
+
+    /**
+     * [META-TX] revokeInvitation
+     * Transaction function to store an invitation where the transaction sender only acts as a middle-man (meta-tx relayer) and the original sender is recovered from the signature
+     */
+    function revokeInvitation(
+        uint256 _groupId,
+        bytes32 _secretHash,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool);
+
+    /**
+     * [DIRECT] revokeInvitation
+     * Transaction function to store an invitation where there is no middle-man (transaction sender = original sender)
+     */
+    function storeInvitation(
+        uint256 _groupId,
+        bytes32 _secretHash
+    )
+        external
+        returns (bool);
+
+
     //////////////////////////////////////////////////////////////////
     // NONCE
     //////////////////////////////////////////////////////////////////

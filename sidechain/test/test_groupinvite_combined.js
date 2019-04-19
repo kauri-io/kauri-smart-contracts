@@ -3,7 +3,7 @@
 'use strict';
 (async () => { // 'accounts' included so maybe it'll retrieve accounts[n]
 
-    const Group                 = artifacts.require("Group.sol");
+    const Group                 = artifacts.require("GroupConnector.sol");
     const Storage               = artifacts.require("Storage.sol");
     const AdminController       = artifacts.require("OnlyOwnerAdminController.sol");
 
@@ -23,7 +23,7 @@
     const groupId               = 0;
     const adminRole             = 1;
     const subordinateRole       = 2;
-    
+
     // secrets to hash
     const secret                = '0x1337';
     const secret2               = '0x7331';
@@ -62,7 +62,7 @@
             );
 
             let sig             = await web3.eth.sign(
-                prepRevoke, 
+                prepRevoke,
                 web3.utils.toChecksumAddress(addr)
             );
 
@@ -90,20 +90,20 @@
             //let shArray         = [];
             //let rolesArray      = [];
             //let noncesArray     = [];
-            
+
             let nonce           = await getNonce(adminAddr);
             let msgHash         = await groupInstance.prepareCreateGroup(
-                METADATA_HASH, 
+                METADATA_HASH,
                 nonce
             );
             let sig             = await web3.eth.sign(
-                msgHash, 
+                msgHash,
                 web3.utils.toChecksumAddress(adminAddr)
             );
             let newGroup        = await groupInstance.createGroup(
                 adminAddr,
-                METADATA_HASH, 
-                // sig, 
+                METADATA_HASH,
+                // sig,
                 // nonce
                 shArray,
                 rolesArray,
@@ -113,6 +113,6 @@
             return newGroup;
         };
 
-    });   
+    });
 
 })();

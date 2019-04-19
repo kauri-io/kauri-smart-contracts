@@ -3,7 +3,7 @@
 'use strict';
 (async (accounts) => { // 'accounts' included so maybe it'll retrieve accounts[n]
 
-    const Group                 = artifacts.require("Group.sol");
+    const Group                 = artifacts.require("GroupConnector.sol");
     const Storage               = artifacts.require("Storage.sol");
     const AdminController       = artifacts.require("OnlyOwnerAdminController.sol");
 
@@ -19,7 +19,7 @@
     let storageInstance;
     let adminController;
 
-    // roles 
+    // roles
     const groupId               = 0;
     const adminRole             = 1;
     const subordinateRole       = 2;
