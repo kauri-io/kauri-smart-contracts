@@ -126,7 +126,7 @@ contract GroupConnector is GroupI, GroupLogic
     external 
     returns (bool)
     {
-        address sender = getSigner(
+        address signer = getSigner(
             this.prepareInvitation(
                 _groupId,
                 _role,
@@ -137,7 +137,7 @@ contract GroupConnector is GroupI, GroupLogic
             _nonce
         );
 
-        storeInvitation(sender, _groupId, _role, _secretHash);
+        storeInvitation(signer, _groupId, _role, _secretHash);
     }
 
     /**
@@ -306,7 +306,7 @@ contract GroupConnector is GroupI, GroupLogic
         bytes32 _addressSecretHash,
         uint256 _nonce
     )
-        public
+        external
         view
         returns (bytes32)
     {
@@ -327,14 +327,14 @@ contract GroupConnector is GroupI, GroupLogic
     function acceptInvitationCommit(
         uint256 _groupId,
         bytes32 _addressSecretHash,
-        bytes memory _signature,
+        bytes calldata _signature,
         uint256 _nonce
     )
-        public
+        external
         returns (bool)
     {
-        address sender = getSigner(
-            prepareAcceptInvitationCommit(
+        address signer = getSigner(
+            this.prepareAcceptInvitationCommit(
                 _groupId,
                 _addressSecretHash,
                 _nonce
@@ -343,7 +343,7 @@ contract GroupConnector is GroupI, GroupLogic
             _nonce
         );
 
-        acceptInvitationCommit(sender, _groupId, _addressSecretHash);
+        acceptInvitationCommit(signer, _groupId, _addressSecretHash);
     }
     
     /**
@@ -354,7 +354,7 @@ contract GroupConnector is GroupI, GroupLogic
         uint256 _groupId,
         bytes32 _secret
     )
-        public
+        external 
         returns (bool)
     {
         acceptInvitationLogic(msg.sender, _groupId, _secret);
@@ -373,7 +373,7 @@ contract GroupConnector is GroupI, GroupLogic
         address _accountToRemove,
         uint256 _nonce
     )
-    public
+    external 
     view
     returns (bytes32)
     {
@@ -400,7 +400,8 @@ contract GroupConnector is GroupI, GroupLogic
     external
     returns (bool)
     {
-        address sender = getSigner(this.prepareRemoveMember(
+        address signer = getSigner(
+            this.prepareRemoveMember(
                 _groupId,
                 _accountToRemove,
                 _nonce
@@ -409,7 +410,7 @@ contract GroupConnector is GroupI, GroupLogic
             _nonce
         );
 
-        removeMember(sender, _groupId, _accountToRemove);
+        removeMember(signer, _groupId, _accountToRemove);
     }
 
     /**
@@ -419,8 +420,8 @@ contract GroupConnector is GroupI, GroupLogic
         uint256 _groupId,
         address _accountToRemove
     )
-    external
-    returns (bool)
+        external
+        returns (bool)
     {
         removeMember(msg.sender, _groupId, _accountToRemove);
     }
@@ -478,13 +479,13 @@ contract GroupConnector is GroupI, GroupLogic
         return signer;
     }
     
-    /*
+    /**
      *  @dev Recovers signer of hash using signature
      * 
-     *  @param _msg Hash from prepareCreateGroup to be signed
+     *  @param _hash Hash from prepareCreateGroup to be signed
      *  @param _signature Signed hash
      * 
-     *  @returns Address of ecrecovered account
+     *  @return Address of ecrecovered account
      */ 
 
     function recoverSignature(
@@ -514,13 +515,13 @@ contract GroupConnector is GroupI, GroupLogic
         
         }
         
-        address sender = ecrecover(
+        address signer = ecrecover(
             prefixed(_hash),
             v, 
             r, 
             s
         );
-        return sender;
+        return signer;
     }
 
     function prefixed(
