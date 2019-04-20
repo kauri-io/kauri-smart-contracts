@@ -1,44 +1,64 @@
 pragma solidity ^0.5.6;
 
+/**
+ * GroupI defines the contract interface and all methods that can be executed from outside (ABI)
+ */
+
 interface GroupI
 {
+    ////////////////////////////////////////////////////////////////////
+    // CREATE GROUP
+    ////////////////////////////////////////////////////////////////////
+
     function prepareCreateGroup(
         bytes32 _metadataLocator, 
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
         uint256 _nonce
     ) 
         external 
         view 
         returns (bytes32);
 
+    /**
+     * [META-TX] createGroup
+     * Transaction function to create a group where the transaction sender only acts as a middle-man 
+     * (meta-tx relayer) and the original sender is recovered from the signature
+     */
+
     function createGroup(
         bytes32 _metadataLocator, 
-        bytes calldata _signature, 
-        uint256 _nonce,
         bytes32[] calldata _secretHashes,
         uint8[] calldata _assignedRoles,
-        uint[] calldata _assignedNonces
+        bytes calldata _signature, 
+        uint256 _nonce
     ) 
         external 
-        returns (bytes32[] memory);
+        returns (bool);
+
+    /**
+     * [DIRECT] createGroup
+     * Transaction function to create a group where there is no middle-man
+     * (transaction sender = original sender)
+     */
 
     function createGroup(
         bytes32 _metadataLocator,
         bytes32[] calldata _secretHashes,
-        uint8[] calldata _assignedRoles,
-        uint[] calldata _assignedNonces
+        uint8[] calldata _assignedRoles
     )
         external
-        returns (bytes32[] memory);
+        returns (bool);
 
-    function createGroup(
-        address _sender,
-        bytes32 _metadataLocator,
-        bytes32[] calldata _secretHashes,
-        uint8[] calldata _assignedRoles,
-        uint[] calldata _assignedNonces
-    )
-        external 
-        returns (bytes32[] memory);
+    ////////////////////////////////////////////////////////////////////
+    // INVITATION 
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX] prepareInvitation
+     * View function that generates a unique method call message for 'storeInvitation' in order to be 
+     * signed and sent to the relayer to identify original sender using ecrecover.
+     */
 
     function prepareInvitation(
         uint256 _groupId, 
@@ -47,12 +67,18 @@ interface GroupI
         uint256 _nonce
     )
         external
-        pure 
+        view 
         returns (bytes32);
+
+    /**
+     * [META-TX] storeInvitation
+     * Transaction function to store an invitation where the transaction sender only acts as a middle-man
+     * (meta-tx relayer) and the original sender is recovered from the signature.
+     */
 
     function storeInvitation(
         uint256 _groupId,
-        uint8   _role,
+        uint8 _role,
         bytes32 _secretHash,
         bytes calldata _signature,
         uint256 _nonce
@@ -60,14 +86,43 @@ interface GroupI
         external
         returns (bool);
 
+    /**
+     * [DIRECT] storeInvitation
+     * Transaction function to store an invitation where there is no middle-man (tx sender = original sender)
+     */
+
+    function storeInvitation(
+        uint256 _groupId,
+        uint8 _role,
+        bytes32 _secretHash
+    )
+        external
+        returns (bool);
+
+    ////////////////////////////////////////////////////////////////////
+    // REVOKE INVITATION
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX] prepareRevokeInvitation
+     * View function generating a unique method call message to be signed and sent to the relayer
+     * so we can identify the original sender using ecrecover.
+     */
+
     function prepareRevokeInvitation(
         uint256 _groupId,
         bytes32 _secretHash,
         uint256 _nonce   
     )
         external
-        pure
+        view 
         returns (bytes32);
+
+    /**
+     * [META-TX] revokeInvitation
+     * Transaction function to store an invitation where the transaction sender only acts as a middle-man 
+     * (meta-tx relayer) and the original sender is recovered from the signature
+     */
 
     function revokeInvitation(
         uint256 _groupId,
@@ -78,14 +133,36 @@ interface GroupI
         external
         returns (bool);
 
+    /**
+     * [DIRECT] revokeInvitation
+     * Transaction function to store an invitation where there is no middle-man (tx sender = original sender)
+     */
+    
+    function revokeInvitation(
+        uint256 _groupId,
+        bytes32 _secretHash
+    )
+        external
+        returns (bool);
+
+    ////////////////////////////////////////////////////////////////////
+    // ACCEPT INVITATION
+    ////////////////////////////////////////////////////////////////////
+
     function prepareAcceptInvitationCommit(
         uint256 _groupId,
         bytes32 _addressSecretHash,
         uint256 _nonce
     )
         external
-        pure 
+        view 
         returns (bytes32);
+
+    /**
+     * [META-TX] acceptInvitationCommit
+     * 
+     * 
+     */
 
     function acceptInvitationCommit(
         uint256 _groupId, 
@@ -96,13 +173,40 @@ interface GroupI
         external
         returns (bool);
 
-    function acceptInvitation(
-        uint256 _groupId,
-        bytes32 _secret,
-        address _sender
+    /**
+     * [META-TX] acceptInvitationCommit
+     * 
+     * 
+     */
+
+    function acceptInvitationCommit(
+        uint256 _groupId, 
+        bytes32 _addressSecretHash
     )
         external
         returns (bool);
+
+    /**
+     * [DIRECT] acceptInvitationCommit  
+     */
+
+    function acceptInvitation(
+        address _sender,
+        uint256 _groupId,
+        bytes32 _secret
+    )
+        external
+        returns (bool);
+
+    ////////////////////////////////////////////////////////////////////
+    // REMOVE_MEMBER
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX] prepareRemoveMember
+     * 
+     * 
+     */
 
     function prepareRemoveMember(
         uint256 _groupId,
@@ -113,6 +217,12 @@ interface GroupI
         view
         returns (bytes32);
 
+    /**
+     * [META-TX] removeMember
+     * 
+     * 
+     */
+
     function removeMember(
         uint256 _groupId,
         address _acountToRemove,
@@ -122,32 +232,49 @@ interface GroupI
         external
         returns (bool);
 
-    // meta-tx prepare function
+    ////////////////////////////////////////////////////////////////////
+    // CHANGE_MEMBER
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX] prepareChangeMemberRole
+     * 
+     * 
+     */
+
     function prepareChangeMemberRole(
         uint256 _groupId,
         address _accountToChange,
-        uint8   _role,
+        uint8 _role,
         uint256 _nonce
     )
         external
         view
         returns (bytes32);
 
+    /**
+     * [META-TX] changeMemberRole
+     * 
+     * 
+     */
+
     function changeMemberRole(
         uint256 _groupId,
         address _accountToChange,
-        uint8   _newRole,
+        uint8 _newRole,
         bytes calldata _signature,
         uint256 _nonce
     )
         external
         returns (bool);
 
-    // group events
+    ////////////////////////////////////////////////////////////////////
+    // EVENTS
+    ////////////////////////////////////////////////////////////////////
+
     event GroupCreated(
         uint256 indexed groupId, address indexed groupOwner, bytes32 metadataLocator);
 
-    // member events
     event MemberAdded(
         address indexed member, uint256 indexed groupId, uint8 indexed role);
     event MemberRemoved(
@@ -155,7 +282,6 @@ interface GroupI
     event MemberRoleChanged(
         uint256 indexed groupId, address indexed member, uint8 indexed newRole, uint8 oldRole);
 
-    // invitation events
     event InvitationPending(
         uint256 indexed groupId, uint8 indexed role, bytes32 secretHash);
     event InvitationRevoked(
