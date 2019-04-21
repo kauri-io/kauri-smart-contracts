@@ -1,9 +1,9 @@
 pragma solidity ^0.5.6;
 
-import './GroupI.sol';
 import '../common/UsingExternalStorage.sol';
+import './GroupI.sol';
 
-contract GroupLogic is GroupI, UsingExternalStorage 
+contract GroupLogic is UsingExternalStorage, GroupI
 {
     /*
      *  Constants for hashing storage keys

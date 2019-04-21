@@ -51,7 +51,7 @@ interface GroupI
         returns (bool);
 
     ////////////////////////////////////////////////////////////////////
-    // INVITATION 
+    // STORE_INVITATION 
     ////////////////////////////////////////////////////////////////////
 
     /**
@@ -87,8 +87,9 @@ interface GroupI
         returns (bool);
 
     /**
-     * [DIRECT] storeInvitation
+     * [DIRECT-TX] storeInvitation
      * Transaction function to store an invitation where there is no middle-man (tx sender = original sender)
+     * 
      */
 
     function storeInvitation(
@@ -136,6 +137,7 @@ interface GroupI
     /**
      * [DIRECT] revokeInvitation
      * Transaction function to store an invitation where there is no middle-man (tx sender = original sender)
+     *
      */
     
     function revokeInvitation(
@@ -148,6 +150,12 @@ interface GroupI
     ////////////////////////////////////////////////////////////////////
     // ACCEPT INVITATION
     ////////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX PREPARE] prepareAcceptInvitationCommit 
+     * TODO
+     * 
+     */
 
     function prepareAcceptInvitationCommit(
         uint256 _groupId,
@@ -174,24 +182,12 @@ interface GroupI
         returns (bool);
 
     /**
-     * [META-TX] acceptInvitationCommit
-     * 
-     * 
-     */
-
-    function acceptInvitationCommit(
-        uint256 _groupId, 
-        bytes32 _addressSecretHash
-    )
-        external
-        returns (bool);
-
-    /**
-     * [DIRECT] acceptInvitationCommit  
+     * [DIRECT-TX] acceptInvitationCommit  
+     * TODO
+     *
      */
 
     function acceptInvitation(
-        address _sender,
         uint256 _groupId,
         bytes32 _secret
     )
@@ -203,8 +199,8 @@ interface GroupI
     ////////////////////////////////////////////////////////////////////
 
     /**
-     * [META-TX] prepareRemoveMember
-     * 
+     * [META-TX PREPARE] prepareRemoveMember
+     * TODO
      * 
      */
 
@@ -219,7 +215,7 @@ interface GroupI
 
     /**
      * [META-TX] removeMember
-     * 
+     * TODO 
      * 
      */
 
@@ -228,6 +224,19 @@ interface GroupI
         address _acountToRemove,
         bytes calldata _signature,
         uint256 _nonce
+    )
+        external
+        returns (bool);
+
+    /**
+     * [DIRECT-TX] removeMember
+     * TODO 
+     * 
+     */
+
+    function removeMember(
+        uint256 _groupId,
+        address _acountToRemove
     )
         external
         returns (bool);
@@ -245,7 +254,7 @@ interface GroupI
     function prepareChangeMemberRole(
         uint256 _groupId,
         address _accountToChange,
-        uint8 _role,
+        uint8 _newRole,
         uint256 _nonce
     )
         external
@@ -264,6 +273,20 @@ interface GroupI
         uint8 _newRole,
         bytes calldata _signature,
         uint256 _nonce
+    )
+        external
+        returns (bool);
+
+    /**
+     * [DIRECT-TX] changeMemberRole
+     * 
+     * 
+     */
+
+    function changeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _newRole
     )
         external
         returns (bool);

@@ -86,6 +86,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [META-TX PREPARE] prepareInvitation
+     *  TODO
+     *
      */
 
     function prepareInvitation(
@@ -94,10 +96,9 @@ contract GroupConnector is GroupI, GroupLogic
         bytes32 _secretHash,
         uint256 _nonce
     )
-
-    external
-    view
-    returns (bytes32)
+        external
+        view
+        returns (bytes32)
     {
         // generate unique method call message
         return keccak256(
@@ -114,6 +115,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [META-TX] storeInvitation
+     *  TODO
+     *
      */
 
     function storeInvitation(
@@ -123,8 +126,8 @@ contract GroupConnector is GroupI, GroupLogic
         bytes calldata _signature,
         uint256 _nonce
     )
-    external 
-    returns (bool)
+        external 
+        returns (bool)
     {
         address signer = getSigner(
             this.prepareInvitation(
@@ -142,6 +145,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [DIRECT-TX] storeInvitation
+     * 
+     *
      */
 
     function storeInvitation(
@@ -161,6 +166,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [META-TX PREPARE] prepareRevokeInvitation
+     *  TODO
+     *
      */
 
     function prepareRevokeInvitation(
@@ -186,6 +193,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [META-TX] revokeInvitation
+     *  TODO
+     *
      */
 
     function revokeInvitation(
@@ -213,6 +222,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [DIRECT-TX] revokeInvitation
+     *  TODO
+     *
      */
 
     function revokeInvitation(
@@ -226,79 +237,13 @@ contract GroupConnector is GroupI, GroupLogic
     }
 
     //////////////////////////////////////////////////
-    // CHANGE_MEMBER
+    // ACCEPT_INVITATION
     //////////////////////////////////////////////////
 
     /**
-     *  [META-TX PREPARE] prepareChangeMemberRole
-     */
-
-    function prepareChangeMemberRole(
-        uint256 _groupId,
-        address _accountToChange,
-        uint8 _newRole,
-        uint256 _nonce
-    )
-        external
-        view
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                _groupId,
-                "changeMemberRole",
-                _accountToChange,
-                _newRole, // changed from _role to _newRole
-                _nonce
-            )
-        );
-    }
-
-    /**
-     *  [META-TX] changeMemberRole
-     */
-
-    function changeMemberRole(
-        uint256 _groupId,
-        address _accountToChange,
-        uint8 _newRole,
-        bytes calldata _signature,
-        uint256 _nonce
-    )
-        external
-        returns (bool)
-    {
-        address signer = getSigner(
-            this.prepareChangeMemberRole(
-                _groupId,
-                _accountToChange,
-                _newRole,
-                _nonce
-            ),
-            _signature,
-            _nonce
-        );
-            
-        changeMemberRole(signer, _groupId, _accountToChange, _newRole);
-    }
-
-    /**
-     *  [DIRECT-TX] changeMemberRole
-     */
-
-    function changeMemberRole(
-        uint256 _groupId,
-        address _accountToChange,
-        uint8 _newRole
-    )
-        external
-        returns (bool)
-    {
-        changeMemberRole(msg.sender, _groupId, _accountToChange, _newRole);
-    }
-
-    /**
      *  [META-TX PREPARE] prepareAcceptInvitationCommit
+     *
+     *
      */
 
     function prepareAcceptInvitationCommit(
@@ -366,6 +311,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [META-TX PREPARE] prepareRemoveMember
+     *  TODO
+     *
      */
 
     function prepareRemoveMember(
@@ -373,9 +320,9 @@ contract GroupConnector is GroupI, GroupLogic
         address _accountToRemove,
         uint256 _nonce
     )
-    external 
-    view
-    returns (bytes32)
+        external 
+        view
+        returns (bytes32)
     {
         return keccak256(
             abi.encodePacked(
@@ -389,6 +336,8 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [META-TX] removeMember
+     *  TODO
+     *
      */
 
     function removeMember(
@@ -397,8 +346,8 @@ contract GroupConnector is GroupI, GroupLogic
         bytes calldata _signature,
         uint256 _nonce
     )
-    external
-    returns (bool)
+        external
+        returns (bool)
     {
         address signer = getSigner(
             this.prepareRemoveMember(
@@ -415,7 +364,10 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [DIRECT-TX] removeMember
+     *  TODO
+     *
      */
+
     function removeMember(
         uint256 _groupId,
         address _accountToRemove
@@ -424,6 +376,84 @@ contract GroupConnector is GroupI, GroupLogic
         returns (bool)
     {
         removeMember(msg.sender, _groupId, _accountToRemove);
+    }
+
+    //////////////////////////////////////////////////
+    // CHANGE_MEMBER
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] prepareChangeMemberRole
+     *  TODO
+     *
+     */
+
+    function prepareChangeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _newRole,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "changeMemberRole",
+                _accountToChange,
+                _newRole, // changed from _role to _newRole
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] changeMemberRole
+     *
+     *
+     */
+
+    function changeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _newRole,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.prepareChangeMemberRole(
+                _groupId,
+                _accountToChange,
+                _newRole,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+            
+        changeMemberRole(signer, _groupId, _accountToChange, _newRole);
+    }
+
+    /**
+     *  [DIRECT-TX] changeMemberRole
+     *  TODO
+     *
+     */
+
+    function changeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _newRole
+    )
+        external
+        returns (bool)
+    {
+        changeMemberRole(msg.sender, _groupId, _accountToChange, _newRole);
     }
 
     //////////////////////////////////////////////////

@@ -3,7 +3,7 @@
 'use strict';
 (async (accounts) => { // 'accounts' included so maybe it'll retrieve accounts[n]
 
-    const Group                 = artifacts.require("Group.sol");
+    const Group                 = artifacts.require("GroupConnector.sol");
     const Storage               = artifacts.require("Storage.sol");
     const AdminController       = artifacts.require("OnlyOwnerAdminController.sol");
 
@@ -22,10 +22,15 @@
     // roles 
     const groupId               = 0;
     const adminRole             = 1;
-    const subordinateRole       = 2;
+    const memberRole       = 2;
 
     // secret hashes
-    const secret                = '0x1337';
+    const secretOne             = '0x1337';
+    const secretTwo             = '0x1338';
+    const secretThree           = '0x1339';
+
+    //const shArray         = [secHash1, secHash2, secHash3];
+    //const rolesArray      = [2, 2, 2];
 
     contract('Group', async accounts => {
 
@@ -36,7 +41,7 @@
 
             // fix the below to produce correct keccak256 hash
             // i.e. remove 'getKeccak()' function from contract
-            const secretHash    = await groupInstance.getKeccak(secret);
+            // const secretHash    = await genSecretHash(secret);
 
             await storageInstance.setAdminController(adminController.address);
             await groupInstance.setAdminController(adminController.address);
@@ -46,8 +51,14 @@
         });
 
 
-        it('should create a group', async () => {
-            let newGroup        = await stageNewGroup(accounts[0]);
+        it('should create a group without additional invitations', async () => {
+            let secretHashArray = [];
+            let rolesArray      = [];
+            let newGroup        = await stageNewGroup(
+                accounts[0], 
+                secretHashArray,
+                rolesArray
+            );
         });
 
         it('should retrieve the correct nonce', async () => {
@@ -72,6 +83,8 @@
             let incorrectNonce  = 1;
             let hash            = await groupInstance.prepareCreateGroup(
                 METADATA_HASH,
+                shArray,
+                rolesArray,
                 incorrectNonce
             );
             let sig             = await web3.eth.sign(
@@ -187,11 +200,11 @@
         // update this to use reusable functions
         it('should store an invitation with correct recovered address', async () => {
             await stageNewGroup(accounts[0]);
-            let secretHash  = await groupInstance.getKeccak(secret);
+            let secretHash  = await genSecretHash(secret);
             let nonce       = await groupInstance.getNonce.call(accounts[1]);
             let msgHash     = await groupInstance.prepareInvitation(
                 groupId,
-                subordinateRole,
+                memberRole,
                 secretHash,
                 nonce
             );
@@ -202,7 +215,7 @@
 
             let storedInv = await groupInstance.storeInvitation(
                 groupId,
-                subordinateRole,
+                memberRole,
                 secretHash,
                 sig,
                 nonce
@@ -228,10 +241,10 @@
 
         it('should fail to store an invitation when provided incorrect nonce', async () => {
           let incorrectNonce = 12423;
-          let  secretHash    = await groupInstance.getKeccak(secret);
+          let secretHash    = await genSecretHash(secret);
           let msgHash     = await stagePrepInvitation(
               groupId,
-              subordinateRole,
+              memberRole,
               secretHash,
               incorrectNonce
           );
@@ -243,7 +256,7 @@
           await catchRevert (
               groupInstance.storeInvitation(
                 groupId,
-                subordinateRole,
+                memberRole,
                 secretHash,
                 sig,
                 incorrectNonce
@@ -258,7 +271,7 @@
             // stage prepareInvite(), storeInvitation(), and acceptInvitation()
             await stagePrepInvAndAccept(
                 groupId,
-                subordinateRole,
+                memberRole,
                 getNonce(accounts[1]),
                 accounts[1]
             );
@@ -280,7 +293,7 @@
             // stage prepareInvite(), storeInvitation(), and acceptInvitation()
             await stagePrepInvAndAccept(
                 groupId,
-                subordinateRole,
+                memberRole,
                 getNonce(accounts[3]),
                 accounts[3]
             );
@@ -331,7 +344,7 @@
         it('should store an invitation in pending state', async () => {
             let addGroup            = stageNewGroup(accounts[3]);
 
-            const secretHash    = await groupInstance.getKeccak(secret);
+            const secretHash    = await genSecretHash(secret);
 
             let prepInvAndAccept    = await stagePrepAndStoreInv(
                 accounts[3]
@@ -355,7 +368,7 @@
                 accounts[0]
             );
 
-            const secretHash    = await groupInstance.getKeccak(secret);
+            const secretHash    = await genSecretHash(secret);
 
             let prepStageAndStore   = await stagePrepAndStoreInv(
                 accounts[1]
@@ -383,7 +396,7 @@
         }
 
         async function prepAndRevokeInvitation(addr) {
-            let secretHash      = await groupInstance.getKeccak(secret);
+            let secretHash      = await genSecretHash(secret);
 
             let prepRevoke      = await groupInstance.prepareRevokeInvitation(
                 groupId,
@@ -406,25 +419,39 @@
             return prepRevoke;
 
         }
+        
+        //////////////////////////////////////////////////
+        // STAGE_NEW_GROUP
+        //////////////////////////////////////////////////
 
-        async function stageNewGroup(adminAddr) {
+        async function stageNewGroup(adminAddr, secretHashArray, rolesArray) {
             let nonce           = await getNonce(adminAddr);
             let msgHash         = await groupInstance.prepareCreateGroup(
                 METADATA_HASH,
+                secretHashArray,
+                rolesArray,
                 nonce
             );
+
             let sig             = await web3.eth.sign(
                 msgHash,
                 web3.utils.toChecksumAddress(adminAddr)
             );
+
             let newGroup        = await groupInstance.createGroup(
                 METADATA_HASH,
+                secretHashArray,
+                rolesArray,
                 sig,
                 nonce
             );
 
             return newGroup;
         };
+
+        //////////////////////////////////////////////////
+        // STAGE_PREP_INVITATION
+        //////////////////////////////////////////////////
 
         async function stagePrepInvitation(groupId, role, secretHash, nonce) {
             let msgHash = await groupInstance.prepareInvitation(
@@ -439,10 +466,10 @@
 
         async function stagePrepAndStoreInv(addr) {
             let nonce           = await getNonce(addr);
-            let secretHash      = await groupInstance.getKeccak(secret);
+            let secretHash      = await genSecretHash(secret);
             let msgHash         = await groupInstance.prepareInvitation(
                 groupId,
-                subordinateRole,
+                memberRole,
                 secretHash,
                 nonce
             );
@@ -454,7 +481,7 @@
 
             let invStored       = await groupInstance.storeInvitation(
                 groupId,
-                subordinateRole,
+                memberRole,
                 secretHash,
                 sig,
                 nonce
@@ -464,7 +491,7 @@
         };
 
         async function stagePrepInvAndAccept(groupId, role, nonce, addr) {
-            const secretHash            = await groupInstance.getKeccak(secret);
+            let secretHash      = await genSecretHash(secret);
             let msgHash = await groupInstance.prepareInvitation(
                 groupId,
                 role,
@@ -515,15 +542,19 @@
             );
 
         };
+        
+        //////////////////////////////////////////////////
+        // GENERATE_SECRET_HASH
+        //////////////////////////////////////////////////
+
+        async function genSecretHash(secretToHash) {
+            let bufferedHash = EthUtil.keccak256(secretToHash);
+            let hexedHash       = EthUtil.bufferToHex(bufferedHash);
+
+            return hexedHash;
+        };
+
 
     });
-
-    async function sign(pk, message) {
-        var msgHash = EthUtil.hashPersonalMessage(new Buffer(message));
-        var signature = EthUtil.ecsign(msgHash, new Buffer(pk, 'hex'));
-        var signatureRPC = EthUtil.toRpcSig(signature.v, signature.r, signature.s);
-
-        return signatureRPC;
-    };
 
 })();
