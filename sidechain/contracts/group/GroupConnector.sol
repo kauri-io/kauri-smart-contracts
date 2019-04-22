@@ -66,7 +66,7 @@ contract GroupConnector is GroupI, GroupLogic
     }
 
     /**
-     *  [DIRECT TX] createGroup
+     *  [DIRECT-TX] createGroup
      */
 
     function createGroup(

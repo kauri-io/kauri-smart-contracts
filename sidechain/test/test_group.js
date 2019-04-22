@@ -22,7 +22,7 @@
     // roles 
     const groupId               = 0;
     const adminRole             = 1;
-    const memberRole       = 2;
+    const memberRole            = 2;
 
     // secret hashes
     const secretOne             = '0x1337';
@@ -54,11 +54,42 @@
         it('should create a group without additional invitations', async () => {
             let secretHashArray = [];
             let rolesArray      = [];
+
             let newGroup        = await stageNewGroup(
                 accounts[0], 
                 secretHashArray,
                 rolesArray
             );
+        });
+
+        it('should create a group with 3 additional arrays', async() => {
+            // use secretOne, secretTwo, secretThree hashes and 
+            // send them into createGroup
+            let secHashOne      = genSecretHash(secretOne);
+            let secHashTwo      = genSecretHash(secretTwo);
+            let secHashThree    = genSecretHash(secretThree);
+
+            let secretHashArray = [secHashOne, secHashTwo, secHashThree];
+            let rolesArray      = [1, 1, 1];
+
+            let newGroup        = await stageNewGroup(
+                accounts[0], 
+                secretHashArray,
+                rolesArray
+            );
+        });
+
+        it('should fail to create a group when sending 11 additional arrays', async() => {
+            // will need to create 11 arrays to send to the contract
+            // send them into createGroup
+        });
+
+        it('should create a group as a direct-tx with no additional invitations', async() => {
+            // send tx to createGroup
+            let secretHashArray = [];
+            let rolesArray      = [];
+
+            let newGroup        = await groupInstance.createGroup(METADATA_HASH, secretHashArray, rolesArray);
         });
 
         it('should retrieve the correct nonce', async () => {
@@ -344,7 +375,7 @@
         it('should store an invitation in pending state', async () => {
             let addGroup            = stageNewGroup(accounts[3]);
 
-            const secretHash    = await genSecretHash(secret);
+            const secretHash    = await genSecretHash(secretOne);
 
             let prepInvAndAccept    = await stagePrepAndStoreInv(
                 accounts[3]
@@ -548,7 +579,7 @@
         //////////////////////////////////////////////////
 
         async function genSecretHash(secretToHash) {
-            let bufferedHash = EthUtil.keccak256(secretToHash);
+            let bufferedHash    = EthUtil.keccak256(secretToHash);
             let hexedHash       = EthUtil.bufferToHex(bufferedHash);
 
             return hexedHash;
