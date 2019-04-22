@@ -301,40 +301,55 @@
         it('should successfully change a member as an admin'), async() => {
           await stageNewGroup(accounts[0]);
 
+          await stagePrepInvAndAccept(
+            groupId,
+            subordinateRole,
+            getNonce(accounts[0]),
+            accounts[1]
+          )
+
           let prep = await prepareChangeMemberRole(
             groupId,
-            accounts[2],
+            accounts[1],
             adminRole,
             await getNonce(accounts[0])
           )
 
+          let sig = await web3.eth.sign(prep, web3.utils.toChecksumAddress(accounts[0]))
+
           await changeMemberRole(
             groupId,
-            accounts[2],
+            accounts[1],
             adminRole,
-            prep,
+            sig,
             await getNonce(accounts[0])
           )
         };
 
         //forever pending
         it('should fail to change a member as a non-admin'), async() => {
-          await stageNewGroup(accounts[0])
+          await stageNewGroup(accounts[0]);
+
+          await stagePrepInvAndAccept(
+            groupId,
+            subordinateRole,
+            getNonce(accounts[1]),
+            accounts[1]
+          )
 
           let prep = await prepareChangeMemberRole(
             groupId,
-            accounts[2],
+            accounts[1],
             subordinateRole,
-            await getNonce(accounts[2])
+            await getNonce(accounts[1])
           )
 
-
-           await changeMemberRole(
+          await changeMemberRole(
             groupId,
-            accounts[2],
+            accounts[1],
             adminRole,
             prep,
-            await getNonce(accounts[2])
+            await getNonce(accounts[1])
           )
 
         };
@@ -433,7 +448,7 @@
 
         });
 
-         it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
+         // it('should emit an InvitationRevoked event when an invitation is revoked', async () => {
         //   let nonce           = await getNonce(accounts[0]);
         //   let secretHash    = await groupInstance.getKeccak(secret);
         //   let inviteRevoked = await groupInstance.prepareRevokeInvitation(
@@ -448,7 +463,7 @@
         //     logInviteRevoke.event,
         //     "revokeInvitation",
         //     "invitation was not revoked"
-        });
+        // });
 
         // };
         //
