@@ -1,4 +1,3 @@
-let Group = artifacts.require('Group');
 let Storage = artifacts.require('Storage');
 let OnlyOwnerAdminController = artifacts.require('OnlyOwnerAdminController');
 

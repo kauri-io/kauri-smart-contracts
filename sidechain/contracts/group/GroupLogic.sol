@@ -1,9 +1,9 @@
 pragma solidity ^0.5.6;
 
-import './GroupI.sol';
 import '../common/UsingExternalStorage.sol';
+import './GroupI.sol';
 
-contract Group is GroupI, UsingExternalStorage
+contract GroupLogic is UsingExternalStorage, GroupI
 {
     /*
      *  Constants for hashing storage keys
@@ -21,11 +21,9 @@ contract Group is GroupI, UsingExternalStorage
     uint8[] public   roles;
     uint expirationPeriod           = 3 days;
 
-    /*
-     *  Nonce mapping and sequence (groupId)
+    /* *  Nonce mapping and sequence (groupId)
      */
 
-    mapping(address => uint256) public nonces;
     mapping(address => bytes32) public temporaryInvitation;
 
     struct Commit
@@ -48,7 +46,7 @@ contract Group is GroupI, UsingExternalStorage
     InvitationState constant defaultState = InvitationState.Pending;
 
     /*************************
-     *  Constructor
+     *  Add roles
      *************************/
 
     /*
@@ -58,111 +56,25 @@ contract Group is GroupI, UsingExternalStorage
      *  @param _additionalRoles uint8 array of additional roles
      */
 
-    constructor(
+    function addRoles(
         uint8[] memory _additionalRoles
     )
-        public
+        public onlyAdmin(4001)
     {
         roles = _additionalRoles;
         for (uint i = 0; i < roles.length; i++)
         {
             require(roles[i] > 1);
-
-            //TODO: fix this in migrations script
-
-            // store additional roles in a mapping
-
-            //storageContract.putBooleanValue(keccak256(
-            //    abi.encodePacked("ADDITIONAL_ROLES", roles[i])),
-            //    true
-            //);
-        }
-    }
-
-    /*************************
-     *  Public Functions
-     *************************/
-
-    /*
-     *  @dev Prepares Keccak256 hash of abi tightly packed encoding
-     *
-     *  @param _metadataLocator IPFS hash for locating metadata
-     *  @param _nonce nonce included to prevent signature replay
-     *
-     *  @returns bytes32 hash to be signed with private key
-     */
-
-    function prepareCreateGroup(
-        bytes32 _metadataLocator,
-        uint256 _nonce
-    )
-        public
-        view
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                address(this),
-                "createGroup",
-                _metadataLocator,
-                _nonce
-                )
+            storageContract.putBooleanValue(
+                keccak256(
+                    abi.encodePacked(
+                        "ADDITIONAL_ROLES",
+                        roles[i]
+                    )
+                ),
+                true
             );
-    }
-
-    /*
-     *  @dev Retrieves hash from prepareCreateGroup function
-     *  @dev and uses hash + signature to ecrecover signer's address
-     *
-     *  @param _metadataLocator IPFS hash for locating metadata
-     *  @param _signature bytes array of signed hash
-     *  @param _nonce nonce included to prevent signature replay
-     *
-     *  @returns bool true when successful group creation
-     */
-
-    function createGroup(
-        bytes32 _metadataLocator,
-        bytes memory _signature,
-        uint256 _nonce
-    )
-        public
-        returns (bool)
-    {
-        address signer = getSigner(
-            prepareCreateGroup(
-                _metadataLocator,
-                _nonce
-            ),
-            _signature,
-            _nonce
-        );
-
-        return createGroup(signer, _metadataLocator);
-    }
-
-    /*
-     * @dev Creates a group with msg.sender address and metadata.
-     * @dev Sets msg.sender as role[0] as group creator with highest permissions.
-     *
-     * @dev Reverts if:
-     *      - neither params are provided
-     *
-     * @param _sender msg.sender OR ecrecovered address from meta-tx
-     * @param _metadataLocator IPFS hash for locating metadata
-     *
-     * @returns bool true when successful group creation
-     */
-
-    function createGroup(
-        bytes32 _metadataLocator
-    )
-        public
-        returns (bool)
-    {
-        address sender = msg.sender;
-
-        return createGroup(sender, _metadataLocator);
+        }
     }
 
     /*************************
@@ -178,18 +90,26 @@ contract Group is GroupI, UsingExternalStorage
      *
      * @param _sender msg.sender OR ecrecovered address from meta-tx
      * @param _metadataLocator IPFS hash for locating metadata
+     * @param _secretHashes array of secretHashes to be added as members
+     * @param _assignedRoles array of roles to be added as members
      */
 
     function createGroup(
         address _sender,
-        bytes32 _metadataLocator
+        bytes32 _metadataLocator,
+        bytes32[] memory _secretHashes,
+        uint8[] memory _assignedRoles
     )
         internal
         returns (bool)
     {
+        // require length of invites to be <= index 9 (10 total invs)
+        require(_secretHashes.length <= 9);
+        require(_assignedRoles.length <= 9);
+
+        require(_assignedRoles.length == _secretHashes.length);
+
         // moving groupId to external storage (as opposed to contract state var)
-        // TODO: does external storage need to be initialized to 0?
-        // AFAIK storage defaults at 0
         uint256 groupId = storageContract.getUintValue(keccak256(
             abi.encodePacked("groupId"))
         );
@@ -222,6 +142,14 @@ contract Group is GroupI, UsingExternalStorage
         );
 
         addMember(groupId, _sender, admin);
+
+        if(_secretHashes.length > 0)
+        {
+            for (uint i = 0; i < _secretHashes.length; i++)
+            {
+                storeInvitation(_sender, groupId, _assignedRoles[i], _secretHashes[i]);
+            }
+        }
 
         // increment groupId
         storageContract.incrementUintValue(keccak256(
@@ -258,32 +186,12 @@ contract Group is GroupI, UsingExternalStorage
         emit MemberAdded(_memberToAdd, _groupId, _role);
     }
 
-    function prepareRemoveMember(
-        uint256 _groupId,
-        address _accountToRemove,
-        uint256 _nonce
-    )
-        public
-        view
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                _groupId,
-                "removeMember",
-                _accountToRemove,
-                _nonce
-            )
-        );
-    }
-
     function removeMember(
+        address _sender,
         uint256 _groupId,
-        address _accountToRemove,
-        bytes memory _signature,
-        uint256 _nonce
+        address _accountToRemove
     )
-        public
+        internal
         returns (bool)
     {
         uint256 signerRole = storageContract.getUintValue(
@@ -291,15 +199,7 @@ contract Group is GroupI, UsingExternalStorage
                 abi.encodePacked(
                     MEMBER_KEY,
                     _groupId,
-                    getSigner(
-                        prepareRemoveMember(
-                            _groupId,
-                            _accountToRemove,
-                            _nonce
-                        ),
-                        _signature,
-                        _nonce
-                    )
+                    _sender
                 )
             )
         );
@@ -322,35 +222,13 @@ contract Group is GroupI, UsingExternalStorage
         return true;
     }
 
-    function prepareChangeMemberRole(
-        uint256 _groupId,
-        address _accountToChange,
-        uint8 _role,
-        uint256 _nonce
-    )
-        public
-        view
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                _groupId,
-                "changeMemberRole",
-                _accountToChange,
-                _role,
-                _nonce
-            )
-        );
-    }
-
     function changeMemberRole(
+        address _sender,
         uint256 _groupId,
         address _accountToChange,
-        uint8 _newRole,
-        bytes memory _signature,
-        uint256 _nonce
+        uint8 _newRole
     )
-        public
+        internal
         returns (bool)
     {
         uint256 signerRole = storageContract.getUintValue(
@@ -358,16 +236,7 @@ contract Group is GroupI, UsingExternalStorage
                 abi.encodePacked(
                     MEMBER_KEY,
                     _groupId,
-                    getSigner(
-                        prepareChangeMemberRole(    // retrieve msgHash
-                            _groupId,
-                            _accountToChange,
-                            _newRole,
-                            _nonce
-                        ),
-                        _signature,
-                        _nonce
-                    )
+                    _sender
                 )
             )
         );
@@ -391,143 +260,17 @@ contract Group is GroupI, UsingExternalStorage
         return true;
     }
 
-    /*
-     *  @dev Calls recoverSignature function
-     *  @dev with require statements and increments nonce
-     *
-     *  @param _msg Hash from prepareCreateGroup to be signed
-     *  @param _signature Signed hash
-     *  @param _nonce Nonce to prevent replay attack
-     *
-     *  @returns Address of account that signed hash
-     */
-
-    function getSigner(
-        bytes32 _msg,
-        bytes memory _signature,
-        uint256 _nonce
-    )
-        internal
-        returns (address)
-    {
-        address signer = recoverSignature(_msg, _signature);
-
-        //uint256 nonce = storageContract.getUintValue(
-        //    keccak256(abi.encodePacked("nonces", signer))
-        //);
-
-        uint256 nonce = getNonce(signer);
-
-        require(signer != address(0), "unable to recover signature");
-        require(_nonce == nonce, "using incorrect nonce");
-
-        // increment signature nonce of signer by 1
-        storageContract.incrementUintValue(
-            keccak256(abi.encodePacked("nonces", signer)),
-            1
-        );
-
-        return signer;
-    }
-
-    /*
-     *  @dev Recovers signer of hash using signature
-     *
-     *  @param _msg Hash from prepareCreateGroup to be signed
-     *  @param _signature Signed hash
-     *
-     *  @returns Address of ecrecovered account
-     */
-
-    function recoverSignature(
-        bytes32 _hash,
-        bytes memory _signature
-    )
-        internal
-        pure
-        returns (address)
-    {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        if (_signature.length != 65) {
-            return address(0);
-        }
-
-        assembly {
-            r := mload(add(_signature, 0x20))
-            s := mload(add(_signature, 0x40))
-            v := byte(0, mload(add(_signature, 0x60)))
-        }
-
-        if (v < 27) {
-            v += 27;
-
-        }
-
-        address sender = ecrecover(
-            prefixed(_hash),
-            v,
-            r,
-            s
-        );
-        return sender;
-    }
-
-    function prefixed(
-        bytes32 _hash
-    )
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
-    }
-
-    /*
-     *  Preparation of an Invitation
-     */
-
-    // prepare invitation
-    function prepareInvitation(
-        uint256 _groupId,
-        uint8   _role,
-        bytes32 _secretHash,
-        uint256 _nonce
-    )
-        public
-        pure
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                _groupId,
-                "storeInvitation", // for sig uniqueness
-                _role,
-                _secretHash,
-                _nonce
-            )
-        );
-    }
-
     // store invitation
     function storeInvitation(
+        address _sender,
         uint256 _groupId,
         uint8   _role,
-        bytes32 _secretHash,
-        bytes memory _signature,
-        uint256 _nonce
+        bytes32 _secretHash
     )
         public
         returns (bool)
     {
-//        uint role = storageContract.getUintValue(keccak256(
-//            abi.encodePacked(INVITATION_)
-//        ));
-
         // TODO: retrieve _sender, ensure they have admin permissions
-        //
 
         // retrieve enable value from external storage
         bool enabled = storageContract.getBooleanValue(keccak256(
@@ -541,7 +284,7 @@ contract Group is GroupI, UsingExternalStorage
         storageContract.putAddressValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")),
             // msgHash from call to prepareInvitation()
-            getSigner(prepareInvitation(_groupId, _role, _secretHash, _nonce), _signature, _nonce)
+            _sender
         );
 
         // store secretHash so it can be checked later
@@ -578,31 +321,10 @@ contract Group is GroupI, UsingExternalStorage
      *  Revocation of a Pending Invitation
      */
 
-    // prepare to revoke a pending invitation
-    function prepareRevokeInvitation(
-        uint256 _groupId,
-        bytes32 _secretHash,
-        uint256 _nonce
-    )
-        public
-        pure
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                _groupId,
-                "revokeInvitation",
-                _secretHash,
-                _nonce
-            )
-        );
-    }
-
     function revokeInvitation(
+        address _sender,
         uint256 _groupId,
-        bytes32 _secretHash,
-        bytes memory _signature,
-        uint256 _nonce
+        bytes32 _secretHash
     )
         public
         returns (bool)
@@ -612,15 +334,7 @@ contract Group is GroupI, UsingExternalStorage
                 abi.encodePacked(
                     MEMBER_KEY,
                     _groupId,
-                    getSigner(
-                        prepareRevokeInvitation(
-                            _groupId,
-                            _secretHash,
-                            _nonce
-                        ),
-                        _signature,
-                        _nonce
-                    )
+                    _sender
                 )
             )
         );
@@ -642,59 +356,27 @@ contract Group is GroupI, UsingExternalStorage
      *  Accepting an Invitation
      */
 
-    function prepareAcceptInvitationCommit(
-        uint256 _groupId,
-        bytes32 _addressSecretHash,
-        uint256 _nonce
-    )
-        public
-        pure
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                _groupId,
-                "acceptInvitationCommit",
-                _addressSecretHash,
-                _nonce
-            )
-        );
-    }
-
     function acceptInvitationCommit(
-        uint256         _groupId,
-        bytes32         _addressSecretHash,
-        bytes memory    _signature,
-        uint256         _nonce
+        address _sender,
+        uint256 _groupId,
+        bytes32 _addressSecretHash
     )
         public
         returns (bool)
     {
-        // get sender by retrieving from signature
-        address sender = getSigner(
-            prepareAcceptInvitationCommit(
-                _groupId,
-                _addressSecretHash,
-                _nonce
-            ),
-            _signature,
-            _nonce
-        );
-
-        commits[sender].id          = _groupId;
-        commits[sender].commit      = _addressSecretHash;
-        commits[sender].sig         = _signature;
-        commits[sender].block       = uint64(block.number);
-        commits[sender].revealed    = false;
+        commits[_sender].id          = _groupId;
+        commits[_sender].commit      = _addressSecretHash;
+        commits[_sender].block       = uint64(block.number);
+        commits[_sender].revealed    = false;
 
         emit AcceptCommitted(_groupId, _addressSecretHash);
         return true;
     }
 
-    function acceptInvitation(
+    function acceptInvitationLogic(
+        address _sender,
         uint256 _groupId,
-        bytes32 _secret,
-        address _sender
+        bytes32 _secret
     )
         public
         returns (bool)
@@ -744,7 +426,6 @@ contract Group is GroupI, UsingExternalStorage
         // implicit conversion from uint256 -> uint8 for 'role'
         addMember(_groupId, _sender, uint8(role));
 
-        // not necessary to return anything, but will keep for now
         return true;
     }
 
@@ -763,17 +444,17 @@ contract Group is GroupI, UsingExternalStorage
         return keccak256(abi.encodePacked(_input));
     }
 
-    function getNonce(
-        address _sender
-    )
-        public
-        view
-        returns (uint256)
-    {
-        return storageContract.getUintValue(keccak256(
-            abi.encodePacked("nonces", _sender))
-        );
-    }
+    //function getNonce(
+    //    address _sender
+    //)
+    //    public
+    //    view
+    //    returns (uint256)
+    //{
+    //    return storageContract.getUintValue(keccak256(
+    //        abi.encodePacked("nonces", _sender))
+    //    );
+    //}
 
     function getRole(
         uint256 _groupId,
@@ -808,9 +489,9 @@ contract Group is GroupI, UsingExternalStorage
         public
         view
         returns (uint)
-        {
-            return storageContract.getUintValue(keccak256(
-                abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE"))
-            );
-        }
+    {
+        return storageContract.getUintValue(keccak256(
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE"))
+        );
+    }
 }

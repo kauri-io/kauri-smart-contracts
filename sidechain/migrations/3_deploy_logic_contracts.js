@@ -1,24 +1,25 @@
-let Group                       = artifacts.require('Group');
+let GroupConnector              = artifacts.require('GroupConnector.sol');
 let Storage                     = artifacts.require('Storage');
 let OnlyOwnerAdminController    = artifacts.require('OnlyOwnerAdminController');
 
 async function performMigration(deployer, network, accounts) {
     let deployedStorage = await Storage.deployed();
-    await deployer.deploy(Group, [2]); // pass storage addr to constructor
+    await deployer.deploy(GroupConnector, [2]); // pass storage addr to constructor
 
     console.log("Adding Storage write permission for Group...");
-    await deployedStorage.addWritePermission(Group.address);
+    await deployedStorage.addWritePermission(GroupConnector.address);
 
-    let deployedGroup = await Group.deployed();
+    let deployedGroup = await GroupConnector.deployed();
 
     console.log("Setting admin controller to OnlyOwnerAdminController for Group contract...");
     await deployedGroup.setAdminController(OnlyOwnerAdminController.address);
 
     console.log("Setting storage address on Group...");
-    // the below will go into the constructor of Group
-    // await deployedGroup.setStorageContractAddress(Storage.address); // this doesn't need to happen anymore
+    await deployedGroup.setStorageContractAddress(Storage.address);
 
-    console.log("Group address: " + Group.address);
+    console.log("Group address: " + GroupConnector.address);
+
+    await deployedGroup.addRoles([2]);
 }
 
 module.exports = function(deployer, network, accounts) {

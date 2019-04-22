@@ -1,110 +1,94 @@
 pragma solidity 0.5.6;
 
-import './Group.sol';
+import './GroupLogic.sol';
+import './GroupI.sol';
 
-contract GroupConnector
+contract GroupConnector is GroupI, GroupLogic
 {
-    Group groupLogic;
 
-    /*
-     *  Create Group
-     */ 
+    //////////////////////////////////////////////////
+    // CREATE_GROUP
+    //////////////////////////////////////////////////
 
-    // without meta-tx
-    function createGroup(
-        bytes32 _metadataLocator 
-    )
-        public
-        returns (bool)
-    {
-        return groupLogic.createGroup(_metadataLocator);
-    }
+    /**
+     *  [META-TX PREPARE] prepareCreateGroup
+     */
 
-    // prepare hash for meta-tx
     function prepareCreateGroup(
         bytes32 _metadataLocator,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
         uint256 _nonce
     )
-        public
+        external
         view
         returns (bytes32)
     {
-        return groupLogic.prepareCreateGroup(_metadataLocator, _nonce);
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "createGroup",
+                _metadataLocator,
+                _secretHashes,
+                _assignedRoles,
+                _nonce
+            )
+        );
     }
 
-    // meta-tx
+    /**
+     *  [META-TX] createGroup
+     */ 
+
     function createGroup(
         bytes32 _metadataLocator,
-        bytes memory _signature,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        bytes calldata _signature,
         uint256 _nonce
     )
-        public
+        external 
         returns (bool)
     {
-        return groupLogic.createGroup(_metadataLocator, _signature, _nonce);
+        address signer = getSigner(
+            this.prepareCreateGroup(
+                _metadataLocator,
+                _secretHashes,
+                _assignedRoles,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        //call the logic
+        createGroup(signer, _metadataLocator, _secretHashes, _assignedRoles);
     }
 
-    /*
-     *  Remove Member
-     */ 
+    /**
+     *  [DIRECT-TX] createGroup
+     */
 
-    function prepareRemoveMember(
-        uint256 _groupId,
-        address _accountToRemove,
-        uint256 _nonce
+    function createGroup(
+        bytes32 _metadataLocator,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles
     )
-        public
-        view
-        returns (bytes32)
-    {
-        return groupLogic.prepareRemoveMember(_groupId, _accountToRemove, _nonce);
-    }
-
-    function removeMember(
-        uint256 _groupId,
-        address _accountToRemove,
-        bytes memory _signature,
-        uint256 _nonce
-    )
-        public
+        external 
         returns (bool)
     {
-        return groupLogic.removeMember(_groupId, _accountToRemove, _signature, _nonce);
+        createGroup(msg.sender, _metadataLocator, _secretHashes, _assignedRoles);
     }
 
-    /*
-     *  Change Member Role
-     */ 
+    //////////////////////////////////////////////////
+    // STORE_INVITATION
+    //////////////////////////////////////////////////
 
-    function prepareChangeMemberRole(
-        uint256 _groupId,
-        address _accountToChange,
-        uint8 _role,
-        uint256 _nonce
-    )
-        public
-        view
-        returns (bytes32)
-    {
-        return groupLogic.prepareChangeMemberRole(_groupId, _accountToChange, _role, _nonce);
-    }
-
-    function changeMemberRole(
-        uint256 _groupId,
-        address _accountToChange,
-        uint8 _newRole,
-        bytes memory _signature,
-        uint256 _nonce
-    )
-        public
-        returns (bool)
-    {
-        return groupLogic.changeMemberRole(_groupId, _accountToChange, _newRole, _signature, _nonce);
-    }
-
-    /*
-     *  Invite Member
-     */ 
+    /**
+     *  [META-TX PREPARE] prepareInvitation
+     *  TODO
+     *
+     */
 
     function prepareInvitation(
         uint256 _groupId,
@@ -112,106 +96,369 @@ contract GroupConnector
         bytes32 _secretHash,
         uint256 _nonce
     )
-        public
+        external
         view
         returns (bytes32)
     {
-        return groupLogic.prepareInvitation(_groupId, _role, _secretHash, _nonce);
+        // generate unique method call message
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "prepareInvitation",
+                _groupId,
+                _role,
+                _secretHash,
+                _nonce
+            )
+        );
     }
+
+    /**
+     *  [META-TX] storeInvitation
+     *  TODO
+     *
+     */
 
     function storeInvitation(
         uint256 _groupId,
         uint8 _role,
         bytes32 _secretHash,
-        bytes memory _signature,
+        bytes calldata _signature,
         uint256 _nonce
     )
-        public
+        external 
         returns (bool)
     {
-        return groupLogic.storeInvitation(_groupId, _role, _secretHash, _signature, _nonce);
+        address signer = getSigner(
+            this.prepareInvitation(
+                _groupId,
+                _role,
+                _secretHash,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        storeInvitation(signer, _groupId, _role, _secretHash);
     }
 
-    /*
-     *  Revocation of Invitation
-     */ 
+    /**
+     *  [DIRECT-TX] storeInvitation
+     * 
+     *
+     */
+
+    function storeInvitation(
+        uint256 _groupId,
+        uint8 _role,
+        bytes32 _secretHash
+    )
+        external
+        returns (bool)
+    {
+        storeInvitation(msg.sender, _groupId, _role, _secretHash);
+    }
+
+    //////////////////////////////////////////////////
+    // REVOKE_INVITATION
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] prepareRevokeInvitation
+     *  TODO
+     *
+     */
 
     function prepareRevokeInvitation(
         uint256 _groupId,
         bytes32 _secretHash,
         uint256 _nonce
     )
-        public
+        external
         view
         returns (bytes32)
     {
-        return groupLogic.prepareRevokeInvitation(_groupId, _secretHash, _nonce);
+        // generate unique method call message
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "revokeInvitation",
+                _groupId,
+                _secretHash,
+                _nonce
+            )
+        );
     }
+
+    /**
+     *  [META-TX] revokeInvitation
+     *  TODO
+     *
+     */
 
     function revokeInvitation(
         uint256 _groupId,
         bytes32 _secretHash,
-        bytes memory _signature,
+        bytes calldata _signature,
         uint256 _nonce
     )
-        public
+        external
         returns (bool)
     {
-        return groupLogic.revokeInvitation(_groupId, _secretHash, _signature, _nonce);
+        address signer = getSigner(
+            this.prepareRevokeInvitation(
+                _groupId,
+                _secretHash,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        // call the logic
+        revokeInvitation(signer, _groupId, _secretHash);
     }
 
-    /*
-     *  Acceptance of Invitation
-     */ 
+    /**
+     *  [DIRECT-TX] revokeInvitation
+     *  TODO
+     *
+     */
+
+    function revokeInvitation(
+        uint256 _groupId,
+        bytes32 _secretHash
+    )
+        external
+        returns (bool)
+    {
+        revokeInvitation(msg.sender, _groupId, _secretHash);
+    }
+
+    //////////////////////////////////////////////////
+    // ACCEPT_INVITATION
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] prepareAcceptInvitationCommit
+     *
+     *
+     */
 
     function prepareAcceptInvitationCommit(
         uint256 _groupId,
         bytes32 _addressSecretHash,
         uint256 _nonce
     )
-        public
+        external
         view
         returns (bytes32)
     {
-        return groupLogic.prepareAcceptInvitationCommit(_groupId, _addressSecretHash, _nonce);
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "acceptInvitationCommit",
+                _addressSecretHash,
+                _nonce
+            )
+        );
     }
+
+    /**
+     *  [META-TX] acceptInvitationCommit
+     */
 
     function acceptInvitationCommit(
         uint256 _groupId,
         bytes32 _addressSecretHash,
-        bytes memory _signature,
+        bytes calldata _signature,
         uint256 _nonce
     )
-        public
+        external
         returns (bool)
     {
-        return groupLogic.acceptInvitationCommit(_groupId, _addressSecretHash, _signature, _nonce);
+        address signer = getSigner(
+            this.prepareAcceptInvitationCommit(
+                _groupId,
+                _addressSecretHash,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        acceptInvitationCommit(signer, _groupId, _addressSecretHash);
     }
+    
+    /**
+     *  [DIRECT-TX] acceptInvitationCommit
+     */
 
     function acceptInvitation(
         uint256 _groupId,
-        bytes32 _secret,
-        address _sender
+        bytes32 _secret
     )
-        public
+        external 
         returns (bool)
     {
-        return groupLogic.acceptInvitation(_groupId, _secret, _sender);
+        acceptInvitationLogic(msg.sender, _groupId, _secret);
     }
 
-    /*
-     *  Utils
-     */ 
+    //////////////////////////////////////////////////
+    // REMOVE_MEMBER
+    //////////////////////////////////////////////////
 
-    function getKeccak(
-        bytes32 _input
+    /**
+     *  [META-TX PREPARE] prepareRemoveMember
+     *  TODO
+     *
+     */
+
+    function prepareRemoveMember(
+        uint256 _groupId,
+        address _accountToRemove,
+        uint256 _nonce
     )
-        public
+        external 
         view
         returns (bytes32)
     {
-        return groupLogic.getKeccak(_input);
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "removeMember",
+                _accountToRemove,
+                _nonce
+            )
+        );
     }
+
+    /**
+     *  [META-TX] removeMember
+     *  TODO
+     *
+     */
+
+    function removeMember(
+        uint256 _groupId,
+        address _accountToRemove,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.prepareRemoveMember(
+                _groupId,
+                _accountToRemove,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        removeMember(signer, _groupId, _accountToRemove);
+    }
+
+    /**
+     *  [DIRECT-TX] removeMember
+     *  TODO
+     *
+     */
+
+    function removeMember(
+        uint256 _groupId,
+        address _accountToRemove
+    )
+        external
+        returns (bool)
+    {
+        removeMember(msg.sender, _groupId, _accountToRemove);
+    }
+
+    //////////////////////////////////////////////////
+    // CHANGE_MEMBER
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] prepareChangeMemberRole
+     *  TODO
+     *
+     */
+
+    function prepareChangeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _newRole,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "changeMemberRole",
+                _accountToChange,
+                _newRole, // changed from _role to _newRole
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] changeMemberRole
+     *
+     *
+     */
+
+    function changeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _newRole,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.prepareChangeMemberRole(
+                _groupId,
+                _accountToChange,
+                _newRole,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+            
+        changeMemberRole(signer, _groupId, _accountToChange, _newRole);
+    }
+
+    /**
+     *  [DIRECT-TX] changeMemberRole
+     *  TODO
+     *
+     */
+
+    function changeMemberRole(
+        uint256 _groupId,
+        address _accountToChange,
+        uint8 _newRole
+    )
+        external
+        returns (bool)
+    {
+        changeMemberRole(msg.sender, _groupId, _accountToChange, _newRole);
+    }
+
+    //////////////////////////////////////////////////
+    // GET_NONCE 
+    //////////////////////////////////////////////////
 
     function getNonce(
         address _sender
@@ -220,40 +467,101 @@ contract GroupConnector
         view
         returns (uint256)
     {
-        return groupLogic.getNonce(_sender);
+        return storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    "nonces",
+                    _sender
+                )
+            )
+        );
     }
 
-    function getRole(
-        uint256 _groupId,
-        address _addr
+    ///////////////////////////////////////////////////////////////////////
+    // UTILS 
+    ///////////////////////////////////////////////////////////////////////
+
+    function getSigner(
+        bytes32 _msg, 
+        bytes memory _signature, 
+        uint256 _nonce
     )
-        public
-        view
-        returns (uint256)
+        internal
+        returns (address)
     {
-        return groupLogic.getRole(_groupId, _addr);
+        address signer = recoverSignature(_msg, _signature);
+
+        //uint256 nonce = storageContract.getUintValue(
+        //    keccak256(abi.encodePacked("nonces", signer))
+        //);
+
+        uint256 nonce = getNonce(signer);
+        
+        require(signer != address(0), "unable to recover signature");
+        require(_nonce == nonce, "using incorrect nonce");
+        
+        // increment signature nonce of signer by 1
+        storageContract.incrementUintValue(
+            keccak256(abi.encodePacked("nonces", signer)),
+            1
+        );
+        
+        return signer;
+    }
+    
+    /**
+     *  @dev Recovers signer of hash using signature
+     * 
+     *  @param _hash Hash from prepareCreateGroup to be signed
+     *  @param _signature Signed hash
+     * 
+     *  @return Address of ecrecovered account
+     */ 
+
+    function recoverSignature(
+        bytes32 _hash, 
+        bytes memory _signature
+    )
+        internal
+        pure
+        returns (address)
+    {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        
+        if (_signature.length != 65) {
+            return address(0);
+        }
+        
+        assembly {
+            r := mload(add(_signature, 0x20)) 
+            s := mload(add(_signature, 0x40)) 
+            v := byte(0, mload(add(_signature, 0x60))) 
+        }
+        
+        if (v < 27) {
+            v += 27;
+        
+        }
+        
+        address signer = ecrecover(
+            prefixed(_hash),
+            v, 
+            r, 
+            s
+        );
+        return signer;
     }
 
-    function isAdmin(
-        uint256 _groupId,
-        address _addr
+    function prefixed(
+        bytes32 _hash
     )
-        public
-        view
-        returns (bool)
+        internal
+        pure
+        returns (bytes32)
     {
-        return groupLogic.isAdmin(_groupId, _addr);
-    }
-
-    function getInvitationState(
-        uint256 _groupId,
-        bytes32 _secretHash
-    )
-        public
-        view
-        returns (uint)
-    {
-        return groupLogic.getInvitationState(_groupId, _secretHash);
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash));
     }
 
 }
