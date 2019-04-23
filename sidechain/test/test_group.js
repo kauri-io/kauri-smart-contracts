@@ -30,7 +30,7 @@
     const secretThree           = '0x1339';
 
     // empty arrays
-    const emptyHashArray          = [];
+    const emptyHashArray        = [];
     const emptyRolesArray       = [];
 
     //const shArray         = [secHash1, secHash2, secHash3];
@@ -96,7 +96,7 @@
             let secretHashArray = [secHashOne,secHashTwo,secHashThree,secHashFour,
                                   secHashFive,secHashSix,secHashSeven,secHashEight,secHashNine,
                                   secHashTen, secHashEleven];
-            let rolesArray = [1,2,2,2,2,2,2,2,2,2,2];
+            let rolesArray = [2,2,2,2,2,2,2,2,2,2,2];
 
             let newGroup = await catchRevert(groupInstance.createGroup(METADATA_HASH,secretHashArray,rolesArray));
 
@@ -240,7 +240,7 @@
                 secretHash,
                 nonce
             );
-        })
+        });
 
         // update this to use the reusable functions
         it('should emit an InvitationPending event on successful invite storage', async () => {
@@ -352,11 +352,9 @@
           let rolesArray = [];
           let newGroup = await groupInstance.createGroup(METADATA_HASH,secretHashArray, rolesArray);
 
-          //find out a way to hash 2 objects together ^^ , address and secret together
           let addressSecretHash = await web3.utils.soliditySha3(accounts[1], secretOne);
-          //addressSecretHash instead of secretHash in the next line
-          //add accept invite commit
-          await groupInstance.acceptInvitation(groupId, addressSecretHash);
+
+          await groupInstance.acceptInvitationCommit(groupId,addressSecretHash);
 
         });
 
@@ -371,6 +369,54 @@
 
          await groupInstance.removeMember(groupId,accounts[1]);
         });
+
+        it('should remove a member as a meta-tx', async () => {
+          let prepGroup = await groupInstance.prepareCreateGroup(
+            METADATA_HASH,
+            emptyHashArray,
+            emptyRolesArray,
+            await groupInstance.getNonce(accounts[0])
+          )
+
+          let makeGroup = await groupInstance.createGroup(
+            METADATA_HASH,
+            emptyHashArray,
+            emptyRolesArray,
+            prepGroup,
+            await groupInstance.getNonce(accounts[0])
+          )
+
+
+          let prepInv = await groupInstance.prepareInvitation(
+            groupId,
+            memberRole,
+            emptyHashArray,
+            await groupInstance.getNonce(accounts[0])
+          )
+
+          let storeInv  = await groupInstance.storeInvitation(
+            groupId,
+            memberRole,
+            emptyHashArray,
+            prepInv,
+            await groupInstance.getNonce(accounts[0])
+          )
+
+          let prepRemove  = await groupInstance.prepareRemoveMember(
+            groupId,
+            accounts[1],
+            await groupInstance.getNonce(accounts[0])
+          )
+
+          let removeMem   = await groupInstance.removeMember(
+            groupId,
+            accounts[1],
+            prepRemove,
+            await groupInstance.getNonce(accounts[0])
+          )
+
+        });
+
 
         it('should change member role as a direct-tx', async () => {
           let secretHashArray = [];
@@ -429,91 +475,95 @@
 
             let newMemberRole = await groupInstance.getRole.call(
                 groupId,
-                accounts[0]
+                accounts[1]
             );
 
-            assert.equal(
+
+
+            await assert.equal(
                 newMemberRole,
                 2               // role 2 (not admin)
             );
         });
 
 
-        //forever pending
-        it('should successfully change a member as an admin'), async() => {
-          await stageNewGroup(accounts[0]);
+        // //forever pending
+        // it('should successfully change a member as an admin', async() => {
+        //   await stageNewGroup(accounts[0]);
+        //
+        //   await stagePrepInvAndAccept(
+        //     groupId,
+        //     subordinateRole,
+        //     getNonce(accounts[0]),
+        //     accounts[1]
+        //   );
+        //
+        //   let prep = await prepareChangeMemberRole(
+        //     groupId,
+        //     accounts[1],
+        //     adminRole,
+        //     await getNonce(accounts[0])
+        //   );
+        //
+        //   let sig = await web3.eth.sign(prep, web3.utils.toChecksumAddress(accounts[0]));
+        //
+        //   await changeMemberRole(
+        //     groupId,
+        //     accounts[1],
+        //     adminRole,
+        //     sig,
+        //     await getNonce(accounts[0])
+        //   );
+        //
+        // });
 
-          await stagePrepInvAndAccept(
-            groupId,
-            subordinateRole,
-            getNonce(accounts[0]),
-            accounts[1]
-          )
+        // //forever pending
+        // it('should fail to change a member as a non-admin', async() => {
+        //   await stageNewGroup(accounts[0]);
+        //
+        //   await stagePrepInvAndAccept(
+        //     groupId,
+        //     subordinateRole,
+        //     getNonce(accounts[1]),
+        //     accounts[1]
+        //   );
+        //
+        //   let prep = await prepareChangeMemberRole(
+        //     groupId,
+        //     accounts[1],
+        //     subordinateRole,
+        //     await getNonce(accounts[1])
+        //   );
+        //
+        //   await changeMemberRole(
+        //     groupId,
+        //     accounts[1],
+        //     adminRole,
+        //     prep,
+        //     await getNonce(accounts[1])
+        //   );
+        //
+        // });
 
-          let prep = await prepareChangeMemberRole(
-            groupId,
-            accounts[1],
-            adminRole,
-            await getNonce(accounts[0])
-          )
-
-          let sig = await web3.eth.sign(prep, web3.utils.toChecksumAddress(accounts[0]))
-
-          await changeMemberRole(
-            groupId,
-            accounts[1],
-            adminRole,
-            sig,
-            await getNonce(accounts[0])
-          )
-        };
-
-        //forever pending
-        it('should fail to change a member as a non-admin'), async() => {
-          await stageNewGroup(accounts[0]);
-
-          await stagePrepInvAndAccept(
-            groupId,
-            subordinateRole,
-            getNonce(accounts[1]),
-            accounts[1]
-          )
-
-          let prep = await prepareChangeMemberRole(
-            groupId,
-            accounts[1],
-            subordinateRole,
-            await getNonce(accounts[1])
-          )
-
-          await changeMemberRole(
-            groupId,
-            accounts[1],
-            adminRole,
-            prep,
-            await getNonce(accounts[1])
-          )
-
-        };
-
-        it('should fail to change a member as an admin when provided incorrect nonce'), async() => {
-          await stageNewGroup(accounts[0]);
-
-          let prep = await prepareChangeMemberRole(
-            groupId,
-            accounts[2],
-            adminRole,
-            1239120)
-          )
-
-          await changeMemberRole(
-            groupId,
-            accounts[2],
-            adminRole,
-            prep,
-            1239120)
-          )
-        };
+        // it('should fail to change a member as an admin when provided incorrect nonce', async() => {
+        //   await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
+        //
+        //   let prep = await prepareChangeMemberRole(
+        //     groupId,
+        //     accounts[2],
+        //     adminRole,
+        //     await getNonce(accounts[0]);
+        //
+        //
+        //   catchRevert(await changeMemberRole(
+        //     groupId,
+        //     accounts[2],
+        //     adminRole,
+        //     prep,
+        //     2)
+        //   );
+        //
+        // });
 
         it('should fail to add another member if not admin of group', async () => {
             // stage new group, accounts[0] is admin
@@ -533,14 +583,14 @@
 
         it('should not allow an admin to add a zero address as an admin', async() => {
 
-          await stageNewGroup(accounts[0]);
+          await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
 
-            catchRevert(stagePrepInvAndAccept(
+            catchRevert(await stagePrepInvAndAccept(
             groupId,
             adminRole,
             await getNonce("0x0000000000000000000000000000000000000000"),
           "0x0000000000000000000000000000000000000000"
-          )
+        )
         );
       });
 
