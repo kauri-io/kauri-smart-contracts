@@ -38,7 +38,7 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [META-TX] createGroup
-     */ 
+     */
 
     function createGroup(
         bytes32 _metadataLocator,
@@ -47,7 +47,7 @@ contract GroupConnector is GroupI, GroupLogic
         bytes calldata _signature,
         uint256 _nonce
     )
-        external 
+        external
         returns (bool)
     {
         address signer = getSigner(
@@ -74,7 +74,7 @@ contract GroupConnector is GroupI, GroupLogic
         bytes32[] calldata _secretHashes,
         uint8[] calldata _assignedRoles
     )
-        external 
+        external
         returns (bool)
     {
         createGroup(msg.sender, _metadataLocator, _secretHashes, _assignedRoles);
@@ -126,7 +126,7 @@ contract GroupConnector is GroupI, GroupLogic
         bytes calldata _signature,
         uint256 _nonce
     )
-        external 
+        external
         returns (bool)
     {
         address signer = getSigner(
@@ -145,7 +145,7 @@ contract GroupConnector is GroupI, GroupLogic
 
     /**
      *  [DIRECT-TX] storeInvitation
-     * 
+     *
      *
      */
 
@@ -290,7 +290,7 @@ contract GroupConnector is GroupI, GroupLogic
 
         acceptInvitationCommit(signer, _groupId, _addressSecretHash);
     }
-    
+
     /**
      *  [META-TX] acceptInvitationCommit
      */
@@ -302,10 +302,10 @@ contract GroupConnector is GroupI, GroupLogic
         external
         returns (bool)
     {
-        // this wasn't included prior, it is now added 
+        // this wasn't included prior, it is now added
         acceptInvitationCommit(msg.sender, _groupId, _addressSecretHash);
     }
-    
+
     /**
      *  [META-TX] acceptInvitation
      */
@@ -315,7 +315,7 @@ contract GroupConnector is GroupI, GroupLogic
         uint256 _groupId,
         bytes32 _secret
     )
-        external 
+        external
         returns (bool)
     {
         acceptInvitationLogic(_signer, _groupId, _secret);
@@ -327,12 +327,13 @@ contract GroupConnector is GroupI, GroupLogic
 
     function acceptInvitation(
         uint256 _groupId,
-        bytes32 _secret
+        bytes32 _secret,
+        address _account
     )
-        external 
+        external
         returns (bool)
     {
-        acceptInvitationLogic(msg.sender, _groupId, _secret);
+        acceptInvitationLogic(_account, _groupId, _secret);
     }
 
     //////////////////////////////////////////////////
@@ -350,7 +351,7 @@ contract GroupConnector is GroupI, GroupLogic
         address _accountToRemove,
         uint256 _nonce
     )
-        external 
+        external
         view
         returns (bytes32)
     {
@@ -465,7 +466,7 @@ contract GroupConnector is GroupI, GroupLogic
             _signature,
             _nonce
         );
-            
+
         changeMemberRole(signer, _groupId, _accountToChange, _newRole);
     }
 
@@ -487,7 +488,7 @@ contract GroupConnector is GroupI, GroupLogic
     }
 
     //////////////////////////////////////////////////
-    // GET_NONCE 
+    // GET_NONCE
     //////////////////////////////////////////////////
 
     function getNonce(
@@ -508,12 +509,12 @@ contract GroupConnector is GroupI, GroupLogic
     }
 
     ///////////////////////////////////////////////////////////////////////
-    // UTILS 
+    // UTILS
     ///////////////////////////////////////////////////////////////////////
 
     function getSigner(
-        bytes32 _msg, 
-        bytes memory _signature, 
+        bytes32 _msg,
+        bytes memory _signature,
         uint256 _nonce
     )
         internal
@@ -526,30 +527,30 @@ contract GroupConnector is GroupI, GroupLogic
         //);
 
         uint256 nonce = getNonce(signer);
-        
+
         require(signer != address(0), "unable to recover signature");
         require(_nonce == nonce, "using incorrect nonce");
-        
+
         // increment signature nonce of signer by 1
         storageContract.incrementUintValue(
             keccak256(abi.encodePacked("nonces", signer)),
             1
         );
-        
+
         return signer;
     }
-    
+
     /**
      *  @dev Recovers signer of hash using signature
-     * 
+     *
      *  @param _hash Hash from prepareCreateGroup to be signed
      *  @param _signature Signed hash
-     * 
+     *
      *  @return Address of ecrecovered account
-     */ 
+     */
 
     function recoverSignature(
-        bytes32 _hash, 
+        bytes32 _hash,
         bytes memory _signature
     )
         internal
@@ -559,26 +560,26 @@ contract GroupConnector is GroupI, GroupLogic
         bytes32 r;
         bytes32 s;
         uint8 v;
-        
+
         if (_signature.length != 65) {
             return address(0);
         }
-        
+
         assembly {
-            r := mload(add(_signature, 0x20)) 
-            s := mload(add(_signature, 0x40)) 
-            v := byte(0, mload(add(_signature, 0x60))) 
+            r := mload(add(_signature, 0x20))
+            s := mload(add(_signature, 0x40))
+            v := byte(0, mload(add(_signature, 0x60)))
         }
-        
+
         if (v < 27) {
             v += 27;
-        
+
         }
-        
+
         address signer = ecrecover(
             prefixed(_hash),
-            v, 
-            r, 
+            v,
+            r,
             s
         );
         return signer;

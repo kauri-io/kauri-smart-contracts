@@ -11,29 +11,29 @@ interface GroupI
     ////////////////////////////////////////////////////////////////////
 
     function prepareCreateGroup(
-        bytes32 _metadataLocator, 
+        bytes32 _metadataLocator,
         bytes32[] calldata _secretHashes,
         uint8[] calldata _assignedRoles,
         uint256 _nonce
-    ) 
-        external 
-        view 
+    )
+        external
+        view
         returns (bytes32);
 
     /**
      * [META-TX] createGroup
-     * Transaction function to create a group where the transaction sender only acts as a middle-man 
+     * Transaction function to create a group where the transaction sender only acts as a middle-man
      * (meta-tx relayer) and the original sender is recovered from the signature
      */
 
     function createGroup(
-        bytes32 _metadataLocator, 
+        bytes32 _metadataLocator,
         bytes32[] calldata _secretHashes,
         uint8[] calldata _assignedRoles,
-        bytes calldata _signature, 
+        bytes calldata _signature,
         uint256 _nonce
-    ) 
-        external 
+    )
+        external
         returns (bool);
 
     /**
@@ -51,23 +51,23 @@ interface GroupI
         returns (bool);
 
     ////////////////////////////////////////////////////////////////////
-    // STORE_INVITATION 
+    // STORE_INVITATION
     ////////////////////////////////////////////////////////////////////
 
     /**
      * [META-TX] prepareInvitation
-     * View function that generates a unique method call message for 'storeInvitation' in order to be 
+     * View function that generates a unique method call message for 'storeInvitation' in order to be
      * signed and sent to the relayer to identify original sender using ecrecover.
      */
 
     function prepareInvitation(
-        uint256 _groupId, 
-        uint8 _role, 
-        bytes32 _secretHash, 
+        uint256 _groupId,
+        uint8 _role,
+        bytes32 _secretHash,
         uint256 _nonce
     )
         external
-        view 
+        view
         returns (bytes32);
 
     /**
@@ -89,7 +89,7 @@ interface GroupI
     /**
      * [DIRECT-TX] storeInvitation
      * Transaction function to store an invitation where there is no middle-man (tx sender = original sender)
-     * 
+     *
      */
 
     function storeInvitation(
@@ -113,15 +113,15 @@ interface GroupI
     function prepareRevokeInvitation(
         uint256 _groupId,
         bytes32 _secretHash,
-        uint256 _nonce   
+        uint256 _nonce
     )
         external
-        view 
+        view
         returns (bytes32);
 
     /**
      * [META-TX] revokeInvitation
-     * Transaction function to store an invitation where the transaction sender only acts as a middle-man 
+     * Transaction function to store an invitation where the transaction sender only acts as a middle-man
      * (meta-tx relayer) and the original sender is recovered from the signature
      */
 
@@ -129,7 +129,7 @@ interface GroupI
         uint256 _groupId,
         bytes32 _secretHash,
         bytes calldata _signature,
-        uint256 _nonce   
+        uint256 _nonce
     )
         external
         returns (bool);
@@ -139,7 +139,7 @@ interface GroupI
      * Transaction function to store an invitation where there is no middle-man (tx sender = original sender)
      *
      */
-    
+
     function revokeInvitation(
         uint256 _groupId,
         bytes32 _secretHash
@@ -152,9 +152,9 @@ interface GroupI
     ////////////////////////////////////////////////////////////////////
 
     /**
-     * [META-TX PREPARE] prepareAcceptInvitationCommit 
+     * [META-TX PREPARE] prepareAcceptInvitationCommit
      * TODO
-     * 
+     *
      */
 
     function prepareAcceptInvitationCommit(
@@ -163,26 +163,26 @@ interface GroupI
         uint256 _nonce
     )
         external
-        view 
+        view
         returns (bytes32);
 
     /**
      * [META-TX] acceptInvitationCommit
-     * 
-     * 
+     *
+     *
      */
 
     function acceptInvitationCommit(
-        uint256 _groupId, 
-        bytes32 _addressSecretHash, 
-        bytes calldata _signature, 
+        uint256 _groupId,
+        bytes32 _addressSecretHash,
+        bytes calldata _signature,
         uint256 _nonce
     )
         external
         returns (bool);
 
     /**
-     * [DIRECT-TX] acceptInvitationCommit  
+     * [DIRECT-TX] acceptInvitationCommit
      * TODO
      *
      */
@@ -196,14 +196,15 @@ interface GroupI
         returns (bool);
 
     /**
-     * [DIRECT-TX] acceptInvitation  
-     * TODO 
+     * [DIRECT-TX] acceptInvitation
+     * TODO
      *
      */
 
     function acceptInvitation(
         uint256 _groupId,
-        bytes32 _secret
+        bytes32 _secret,
+        address _account
     )
         external
         returns (bool);
@@ -215,7 +216,7 @@ interface GroupI
     /**
      * [META-TX PREPARE] prepareRemoveMember
      * TODO
-     * 
+     *
      */
 
     function prepareRemoveMember(
@@ -229,8 +230,8 @@ interface GroupI
 
     /**
      * [META-TX] removeMember
-     * TODO 
-     * 
+     * TODO
+     *
      */
 
     function removeMember(
@@ -244,8 +245,8 @@ interface GroupI
 
     /**
      * [DIRECT-TX] removeMember
-     * TODO 
-     * 
+     * TODO
+     *
      */
 
     function removeMember(
@@ -261,8 +262,8 @@ interface GroupI
 
     /**
      * [META-TX] prepareChangeMemberRole
-     * 
-     * 
+     *
+     *
      */
 
     function prepareChangeMemberRole(
@@ -277,8 +278,8 @@ interface GroupI
 
     /**
      * [META-TX] changeMemberRole
-     * 
-     * 
+     *
+     *
      */
 
     function changeMemberRole(
@@ -293,8 +294,8 @@ interface GroupI
 
     /**
      * [DIRECT-TX] changeMemberRole
-     * 
-     * 
+     *
+     *
      */
 
     function changeMemberRole(
