@@ -187,6 +187,20 @@ interface GroupI
      *
      */
 
+    function acceptInvitationCommit(
+        address _sender,
+        uint256 _groupId,
+        bytes32 _addressSecretHash
+    )
+        external
+        returns (bool);
+
+    /**
+     * [DIRECT-TX] acceptInvitation  
+     * TODO 
+     *
+     */
+
     function acceptInvitation(
         uint256 _groupId,
         bytes32 _secret
