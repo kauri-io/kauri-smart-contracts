@@ -40,17 +40,16 @@
 
         beforeEach(async () => {
             storageInstance     = await Storage.new();
-            groupInstance       = await Group.new([2]);
+            groupInstance       = await Group.new();
             adminController     = await AdminController.new();
-
-            // fix the below to produce correct keccak256 hash
-            // i.e. remove 'getKeccak()' function from contract
-            // const secretHash    = await genSecretHash(secret);
 
             await storageInstance.setAdminController(adminController.address);
             await groupInstance.setAdminController(adminController.address);
             await groupInstance.setStorageContractAddress(storageInstance.address);
             await storageInstance.addWritePermission(groupInstance.address);
+
+            // add additional role '2' (member/moderator)
+            await groupInstance.addRoles([2]);
 
         });
 

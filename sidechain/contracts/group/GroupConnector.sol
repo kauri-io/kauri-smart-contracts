@@ -292,7 +292,7 @@ contract GroupConnector is GroupI, GroupLogic
     }
 
     /**
-     *  [META-TX] acceptInvitationCommit
+     *  [DIRECT-TX] acceptInvitationCommit
      */
 
     function acceptInvitationCommit(
@@ -302,23 +302,7 @@ contract GroupConnector is GroupI, GroupLogic
         external
         returns (bool)
     {
-        // this wasn't included prior, it is now added
         acceptInvitationCommit(msg.sender, _groupId, _addressSecretHash);
-    }
-
-    /**
-     *  [META-TX] acceptInvitation
-     */
-
-    function acceptInvitation(
-        address _signer,
-        uint256 _groupId,
-        bytes32 _secret
-    )
-        external
-        returns (bool)
-    {
-        acceptInvitationLogic(_signer, _groupId, _secret);
     }
 
     /**

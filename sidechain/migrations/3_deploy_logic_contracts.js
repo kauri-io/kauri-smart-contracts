@@ -4,8 +4,8 @@ let OnlyOwnerAdminController    = artifacts.require('OnlyOwnerAdminController');
 
 async function performMigration(deployer, network, accounts) {
     let deployedStorage = await Storage.deployed();
-    await deployer.deploy(GroupConnector, [2]); // pass storage addr to constructor
-
+    await deployer.deploy(GroupConnector); 
+    
     console.log("Adding Storage write permission for Group...");
     await deployedStorage.addWritePermission(GroupConnector.address);
 
