@@ -7,23 +7,23 @@ contract GroupLogic is UsingExternalStorage, GroupI
 {
     /*
      *  Constants for hashing storage keys
-     */ 
-    
+     */
+
     string  constant GROUP_KEY      = "COMMUNITY";
     string  constant MEMBER_KEY     = "MEMBER";
     string  constant INVITATION_KEY = "INVITATION";
-    
-    /* 
+
+    /*
      *  Role constants; admin is default 1
      */
 
-    uint8   constant admin          = 1; 
+    uint8   constant admin          = 1;
     uint8[] public   roles;
     uint expirationPeriod           = 3 days;
 
-    /* *  Nonce mapping and sequence (groupId) 
-     */ 
-    
+    /* *  Nonce mapping and sequence (groupId)
+     */
+
     mapping(address => bytes32) public temporaryInvitation;
 
     struct Commit
@@ -39,8 +39,8 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
      /*
       * Enum for Invitation State
-      */ 
-    
+      */
+
     enum InvitationState { Pending, Revoked, Accepted }
     InvitationState InvState;
     InvitationState constant defaultState = InvitationState.Pending;
@@ -82,12 +82,12 @@ contract GroupLogic is UsingExternalStorage, GroupI
      *************************/
 
     /*
-     * @dev Creates a group with sender address and metadata. 
-     * @dev Sets sender as role[0] as group creator with highest permissions. 
-     * 
-     * @dev Reverts if: 
+     * @dev Creates a group with sender address and metadata.
+     * @dev Sets sender as role[0] as group creator with highest permissions.
+     *
+     * @dev Reverts if:
      *      - neither params are provided
-     * 
+     *
      * @param _sender msg.sender OR ecrecovered address from meta-tx
      * @param _metadataLocator IPFS hash for locating metadata
      * @param _secretHashes array of secretHashes to be added as members
@@ -95,12 +95,12 @@ contract GroupLogic is UsingExternalStorage, GroupI
      */
 
     function createGroup(
-        address _sender, 
+        address _sender,
         bytes32 _metadataLocator,
         bytes32[] memory _secretHashes,
         uint8[] memory _assignedRoles
     )
-        internal 
+        internal
         returns (bool)
     {
         // require length of invites to be <= index 9 (10 total invs)
@@ -114,34 +114,34 @@ contract GroupLogic is UsingExternalStorage, GroupI
             abi.encodePacked("groupId"))
         );
 
-        // set group to ENABLED 
+        // set group to ENABLED
         storageContract.putBooleanValue(keccak256(
-            abi.encodePacked(GROUP_KEY, groupId, "ENABLED")),  
-            true                                               
+            abi.encodePacked(GROUP_KEY, groupId, "ENABLED")),
+            true
         );
-      
+
         // set groupId as sequence (uint256)
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(GROUP_KEY, groupId, "groupStruct", "groupId")),   
+            abi.encodePacked(GROUP_KEY, groupId, "groupStruct", "groupId")),
             groupId
         );
 
         // set metadataLocator to group "struct"
         storageContract.putBytes32Value(keccak256(
-            abi.encodePacked(GROUP_KEY, groupId, "groupStruct", "metadataLocator")), 
+            abi.encodePacked(GROUP_KEY, groupId, "groupStruct", "metadataLocator")),
             _metadataLocator
         );
 
-        // emit GroupCreated event 
-        emit GroupCreated(groupId, _sender, _metadataLocator); 
+        // emit GroupCreated event
+        emit GroupCreated(groupId, _sender, _metadataLocator);
 
         // set groupCreator as sender
         storageContract.putAddressValue(keccak256(
-            abi.encodePacked(GROUP_KEY, groupId, "groupStruct", "groupCreator")), 
+            abi.encodePacked(GROUP_KEY, groupId, "groupStruct", "groupCreator")),
             _sender
         );
-        
-        addMember(groupId, _sender, admin); 
+
+        addMember(groupId, _sender, admin);
 
         if(_secretHashes.length > 0)
         {
@@ -153,7 +153,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         // increment groupId
         storageContract.incrementUintValue(keccak256(
-            abi.encodePacked("groupId")),   
+            abi.encodePacked("groupId")),
             1
         );
 
@@ -162,26 +162,26 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
     /*
      *  @dev Creates a new member
-     * 
+     *
      *  @param _groupId From the sequence public uint256 (group id)
      *  @param _sender  Address of sender who originated group creation
      *  @param _role    Role (permissions level) address to be set to
-     * 
-     *  @returns bool when member successfully added 
-     */ 
+     *
+     *  @returns bool when member successfully added
+     */
 
     function addMember(
-        uint256 _groupId, 
-        address _memberToAdd, 
+        uint256 _groupId,
+        address _memberToAdd,
         uint8 _role
     )
         internal
         returns (bool)
     {
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, _memberToAdd)), 
+            abi.encodePacked(MEMBER_KEY, _groupId, _memberToAdd)),
             _role
-        ); 
+        );
 
         emit MemberAdded(_memberToAdd, _groupId, _role);
     }
@@ -197,8 +197,8 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 signerRole = storageContract.getUintValue(
             keccak256(
                 abi.encodePacked(
-                    MEMBER_KEY, 
-                    _groupId, 
+                    MEMBER_KEY,
+                    _groupId,
                     _sender
                 )
             )
@@ -213,9 +213,9 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         // now set member's role to 0
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, _accountToRemove)), 
-            0 
-        ); 
+            abi.encodePacked(MEMBER_KEY, _groupId, _accountToRemove)),
+            0
+        );
 
         emit MemberRemoved(_groupId, _accountToRemove, uint8(prevRole));
 
@@ -228,14 +228,14 @@ contract GroupLogic is UsingExternalStorage, GroupI
         address _accountToChange,
         uint8 _newRole
     )
-        internal 
+        internal
         returns (bool)
     {
         uint256 signerRole = storageContract.getUintValue(
             keccak256(
                 abi.encodePacked(
-                    MEMBER_KEY, 
-                    _groupId, 
+                    MEMBER_KEY,
+                    _groupId,
                     _sender
                 )
             )
@@ -250,25 +250,25 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         // set member to new role
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, _accountToChange)), 
+            abi.encodePacked(MEMBER_KEY, _groupId, _accountToChange)),
             _newRole
-        ); 
+        );
 
         emit MemberRoleChanged(
             _groupId, _accountToChange, _newRole, uint8(prevRole));
 
         return true;
     }
-    
-    // store invitation 
+
+    // store invitation
     function storeInvitation(
         address _sender,
-        uint256 _groupId, 
+        uint256 _groupId,
         uint8   _role,
         bytes32 _secretHash
     )
         public
-        returns (bool) 
+        returns (bool)
     {
         // TODO: retrieve _sender, ensure they have admin permissions
 
@@ -279,35 +279,35 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         // require groupId to be enabled
         require(enabled == true, "group is not enabled");
-      
+
         // recover signer, and set as address
         storageContract.putAddressValue(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")), 
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")),
             // msgHash from call to prepareInvitation()
             _sender
         );
 
         // store secretHash so it can be checked later
         storageContract.putBytes32Value(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SECRET_HASH")), 
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SECRET_HASH")),
             _secretHash
         );
 
         // set role
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "ROLE")), 
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "ROLE")),
             _role
         );
 
         // set expiration date of 3 days
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "EXPIRATION_DATE")), 
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "EXPIRATION_DATE")),
             now + expirationPeriod
         );
 
         // put invitation into default state of pending
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE")), 
+            abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE")),
             uint(defaultState)
         );
 
@@ -319,7 +319,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
     /*
      *  Revocation of a Pending Invitation
-     */ 
+     */
 
     function revokeInvitation(
         address _sender,
@@ -332,12 +332,12 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 signerRole = storageContract.getUintValue(
             keccak256(
                 abi.encodePacked(
-                    MEMBER_KEY, 
-                    _groupId, 
+                    MEMBER_KEY,
+                    _groupId,
                     _sender
                 )
             )
-        ); 
+        );
 
         require(uint8(signerRole) == admin);
 
@@ -354,7 +354,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
     /*
      *  Accepting an Invitation
-     */ 
+     */
 
     function acceptInvitationCommit(
         address _sender,
@@ -383,13 +383,13 @@ contract GroupLogic is UsingExternalStorage, GroupI
     {
         // assign reference to ephemeral Commit struct
         Commit storage tempCommit = commits[_sender];
-        
+
         // retrieve secretHash
         bytes32 secretHash      = storageContract.getBytes32Value(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "SECRET_HASH"))
         );
 
-        // retrieve expiration date from ext. storage 
+        // retrieve expiration date from ext. storage
         uint expirationDate     = storageContract.getUintValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "EXPIRATION_DATE"))
         );
@@ -401,22 +401,22 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         // verify that hashed '_secret' == 'secretHash'
         require(
-            keccak256(abi.encodePacked(_secret))                == secretHash, 
+            keccak256(abi.encodePacked(_secret))                == secretHash,
             "hashed provided 'secret' does not match stored 'secretHash'"
         );
 
         // verify that hashed '_secret + sender address' == 'addressSecretHash'
         //require(
-        //    keccak256(abi.encodePacked(_secret, _sender))       == tempCommit.commit, 
+        //    keccak256(abi.encodePacked(_secret, _sender))       == tempCommit.commit,
         //    "provided hashed '_secret + sender address does not match 'addressSecretHash"
         //);
-        
+
         // require current block to be greater than block the commit was recorded
         require(block.number > tempCommit.block);
 
         // require current time to be before the expiration date
         require(block.timestamp < expirationDate);
-        
+
         // require that temporary commit is not already revealed
         require(!tempCommit.revealed);
 
@@ -455,7 +455,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
     //        abi.encodePacked("nonces", _sender))
     //    );
     //}
-    
+
     function getRole(
         uint256 _groupId,
         address _addr
