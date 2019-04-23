@@ -292,17 +292,48 @@ contract GroupConnector is GroupI, GroupLogic
     }
 
     /**
-     *  [DIRECT-TX] acceptInvitationCommit
+     *  [META-TX] acceptInvitationCommit
+     */
+
+    function acceptInvitationCommit(
+        uint256 _groupId,
+        bytes32 _addressSecretHash
+    )
+        external
+        returns (bool)
+    {
+        // this wasn't included prior, it is now added
+        acceptInvitationCommit(msg.sender, _groupId, _addressSecretHash);
+    }
+
+    /**
+     *  [META-TX] acceptInvitation
      */
 
     function acceptInvitation(
+        address _signer,
         uint256 _groupId,
         bytes32 _secret
     )
         external
         returns (bool)
     {
-        acceptInvitationLogic(msg.sender, _groupId, _secret);
+        acceptInvitationLogic(_signer, _groupId, _secret);
+    }
+
+    /**
+     *  [DIRECT-TX] acceptInvitation
+     */
+
+    function acceptInvitation(
+        uint256 _groupId,
+        bytes32 _secret,
+        address _account
+    )
+        external
+        returns (bool)
+    {
+        acceptInvitationLogic(_account, _groupId, _secret);
     }
 
     //////////////////////////////////////////////////
