@@ -106,7 +106,6 @@ contract GroupLogic is UsingExternalStorage, GroupI
         // require length of invites to be <= index 9 (10 total invs)
         require(_secretHashes.length <= 9);
         require(_assignedRoles.length <= 9);
-
         require(_assignedRoles.length == _secretHashes.length);
 
         // moving groupId to external storage (as opposed to contract state var)
@@ -270,7 +269,9 @@ contract GroupLogic is UsingExternalStorage, GroupI
         public
         returns (bool)
     {
-        // TODO: retrieve _sender, ensure they have admin permissions
+        // require address storing invite is an admin
+        // require(isAdmin(_groupId, _sender), "_sender is not an admin");
+        require(getStorageSlot(_groupId, _sender) == uint256(admin), "_sender is not an admin");
 
         // retrieve enable value from external storage
         bool enabled = storageContract.getBooleanValue(keccak256(
@@ -280,7 +281,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         // require groupId to be enabled
         require(enabled == true, "group is not enabled");
 
-        // recover signer, and set as address
+        // set recovered signer as _sender address
         storageContract.putAddressValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "SIGNER")),
             // msgHash from call to prepareInvitation()
@@ -433,29 +434,6 @@ contract GroupLogic is UsingExternalStorage, GroupI
      *  Utility Functions
      */
 
-    // to be removed
-    function getKeccak(
-        bytes32 _input
-    )
-        public
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encodePacked(_input));
-    }
-
-    //function getNonce(
-    //    address _sender
-    //)
-    //    public
-    //    view
-    //    returns (uint256)
-    //{
-    //    return storageContract.getUintValue(keccak256(
-    //        abi.encodePacked("nonces", _sender))
-    //    );
-    //}
-
     function getRole(
         uint256 _groupId,
         address _addr
@@ -477,9 +455,11 @@ contract GroupLogic is UsingExternalStorage, GroupI
         view
         returns (bool)
     {
-        return storageContract.getUintValue(keccak256(
+        require(storageContract.getUintValue(keccak256(
             abi.encodePacked(MEMBER_KEY, _groupId, _addr))
-        ) == admin;
+        ) == 1);
+
+        return true;
     }
 
     function getInvitationState(
@@ -494,4 +474,24 @@ contract GroupLogic is UsingExternalStorage, GroupI
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE"))
         );
     }
+
+    function getStorageSlot(
+        uint256 _groupId,
+        address _addr
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return storageContract.getUintValue(
+            keccak256(
+                abi.encodePacked(
+                    MEMBER_KEY,
+                    _groupId,
+                    _addr
+                )
+            )
+        );
+    }
+
 }
