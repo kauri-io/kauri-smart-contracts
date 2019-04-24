@@ -387,30 +387,35 @@
             //let prepInv = await groupInstance.prepareInvitation(
             //    groupId,
             //    memberRole,
-            //    emptyHashArray,
-            //    0
+            //    await genSecretHash(secretOne),
+            //    await getNonce(accounts[0])
             //);
 
             //let storeInv  = await groupInstance.storeInvitation(
             //    groupId,
             //    memberRole,
-            //    emptyHashArray,
+            //    await genSecretHash(secretOne),
             //    prepInv,
-            //    0
+            //    await getNonce(accounts[0])
             //);
 
-            //let prepRemove  = await groupInstance.prepareRemoveMember(
-            //    groupId,
-            //    accounts[1],
-            //    0
-            //);
+            let prepRemove  = await groupInstance.prepareRemoveMember(
+                groupId,
+                accounts[1],
+                await getNonce(accounts[0])
+            );
 
-            //let removeMem   = await groupInstance.removeMember(
-            //    groupId,
-            //    accounts[1],
-            //    prepRemove,
-            //    0
-            //);
+            let sig         = await web3.eth.sign(
+                prepRemove,
+                web3.utils.toChecksumAddress(accounts[0])
+            );
+
+            let removeMem   = await groupInstance.removeMember(
+                groupId,
+                accounts[1],
+                sig,
+                await getNonce(accounts[0])
+            );
 
         });
 
