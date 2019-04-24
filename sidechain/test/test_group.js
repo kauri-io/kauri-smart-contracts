@@ -384,21 +384,6 @@
                 accounts[1]
             );
 
-            //let prepInv = await groupInstance.prepareInvitation(
-            //    groupId,
-            //    memberRole,
-            //    await genSecretHash(secretOne),
-            //    await getNonce(accounts[0])
-            //);
-
-            //let storeInv  = await groupInstance.storeInvitation(
-            //    groupId,
-            //    memberRole,
-            //    await genSecretHash(secretOne),
-            //    prepInv,
-            //    await getNonce(accounts[0])
-            //);
-
             let prepRemove  = await groupInstance.prepareRemoveMember(
                 groupId,
                 accounts[1],
