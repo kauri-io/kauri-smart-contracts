@@ -271,7 +271,16 @@ contract GroupLogic is UsingExternalStorage, GroupI
     {
         // require address storing invite is an admin
         // require(isAdmin(_groupId, _sender), "_sender is not an admin");
-        require(getStorageSlot(_groupId, _sender) == uint256(admin), "_sender is not an admin");
+
+        // require role to exist
+        require(storageContract.getBooleanValue(
+                keccak256(
+                    abi.encodePacked(
+                        "ADDITIONAL_ROLES",
+                        _role
+                    )
+                )
+            ) == true, "role does not exist");
 
         // retrieve enable value from external storage
         bool enabled = storageContract.getBooleanValue(keccak256(

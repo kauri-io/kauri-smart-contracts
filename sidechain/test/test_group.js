@@ -691,8 +691,6 @@
                 nonce
             );
 
-            console.log(await groupInstance.getStorageSlot(groupId, accounts[0]));
-
             return newGroup;
         };
 
