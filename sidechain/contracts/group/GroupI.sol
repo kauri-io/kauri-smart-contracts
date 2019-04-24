@@ -188,7 +188,6 @@ interface GroupI
      */
 
     function acceptInvitationCommit(
-        address _sender,
         uint256 _groupId,
         bytes32 _addressSecretHash
     )

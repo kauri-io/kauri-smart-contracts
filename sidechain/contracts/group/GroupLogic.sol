@@ -62,9 +62,11 @@ contract GroupLogic is UsingExternalStorage, GroupI
         public onlyAdmin(4001)
     {
         roles = _additionalRoles;
+
+        roles.push(1); // add admin role by default
+
         for (uint i = 0; i < roles.length; i++)
         {
-            require(roles[i] > 1);
             storageContract.putBooleanValue(
                 keccak256(
                     abi.encodePacked(
@@ -242,6 +244,9 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         require(uint8(signerRole) == admin);
 
+        // check if accountToChange belongs to the community
+        isMember(_groupId, _accountToChange);
+
         // retrieving previous role to populate MemberRemoved event
         uint256 prevRole = storageContract.getUintValue(keccak256(
             abi.encodePacked(MEMBER_KEY, _groupId, _accountToChange))
@@ -266,11 +271,11 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint8   _role,
         bytes32 _secretHash
     )
-        public
+        internal
         returns (bool)
     {
         // require address storing invite is an admin
-        // require(isAdmin(_groupId, _sender), "_sender is not an admin");
+        require(isAdmin(_groupId, _sender), "_sender is not an admin");
 
         // require role to exist
         require(storageContract.getBooleanValue(
@@ -336,7 +341,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 _groupId,
         bytes32 _secretHash
     )
-        public
+        internal
         returns (bool)
     {
         uint256 signerRole = storageContract.getUintValue(
@@ -371,7 +376,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 _groupId,
         bytes32 _addressSecretHash
     )
-        public
+        internal
         returns (bool)
     {
         commits[_sender].id          = _groupId;
@@ -388,7 +393,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 _groupId,
         bytes32 _secret
     )
-        public
+        internal
         returns (bool)
     {
         // assign reference to ephemeral Commit struct
@@ -460,13 +465,28 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 _groupId,
         address _addr
     )
-        public
+        internal
         view
         returns (bool)
     {
         require(storageContract.getUintValue(keccak256(
             abi.encodePacked(MEMBER_KEY, _groupId, _addr))
         ) == 1);
+
+        return true;
+    }
+
+    function isMember(
+        uint256 _groupId,
+        address _addr
+    )
+        internal
+        view
+        returns (bool)
+    {
+        require(storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _addr))
+        ) > 0);
 
         return true;
     }
@@ -488,7 +508,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 _groupId,
         address _addr
     )
-        public
+        internal
         view
         returns (uint256)
     {
