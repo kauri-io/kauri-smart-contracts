@@ -71,7 +71,8 @@ jobs:
     script:
     - ../travis/runTests.sh
     after_script:
-    - npm run coverage && cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+    - npm run coverage
+    - cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - stage: solidity-tests-sidechain
     install:
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
@@ -80,7 +81,8 @@ jobs:
     script:
     - ../travis/runTests.sh
     after_script:
-    - npm run coverage && cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+    - npm run coverage
+    - cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - stage: git-tag
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
