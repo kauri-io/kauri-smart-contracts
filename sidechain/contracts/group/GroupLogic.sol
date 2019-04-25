@@ -504,23 +504,4 @@ contract GroupLogic is UsingExternalStorage, GroupI
         );
     }
 
-    function getStorageSlot(
-        uint256 _groupId,
-        address _addr
-    )
-        internal
-        view
-        returns (uint256)
-    {
-        return storageContract.getUintValue(
-            keccak256(
-                abi.encodePacked(
-                    MEMBER_KEY,
-                    _groupId,
-                    _addr
-                )
-            )
-        );
-    }
-
 }
