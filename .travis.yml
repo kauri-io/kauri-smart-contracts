@@ -1,5 +1,7 @@
 dist: xenial
 language: node_js
+notifications:
+  webhooks: https://coveralls.io/webhook?repo_token=COVERALLS_REPO_TOKEN
 node_js:
   - "10.15.3"
 sudo: false
@@ -68,6 +70,8 @@ jobs:
     - npm install
     script:
     - ../travis/runTests.sh
+    after_script:
+    - npm run coverage && cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - stage: solidity-tests-sidechain
     install:
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
