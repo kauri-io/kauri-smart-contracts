@@ -75,6 +75,8 @@ jobs:
     - npm install
     script:
     - ../travis/runTests.sh
+    after_script:
+    - npm run coverage && cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
   - stage: git-tag
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
