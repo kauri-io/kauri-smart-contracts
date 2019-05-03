@@ -219,7 +219,7 @@
             let numberOfEvents       = groupCreated.logs.length;
 
             assert.equal(
-                numEvents,
+                numberOfEvents,
                 12,
                 "12 events were not emitted"
             );
