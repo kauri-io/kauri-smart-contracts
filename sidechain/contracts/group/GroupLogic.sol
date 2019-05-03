@@ -5,25 +5,18 @@ import './GroupI.sol';
 
 contract GroupLogic is UsingExternalStorage, GroupI
 {
-    /*
-     *  Constants for hashing storage keys
-     */
-
+    // Constants for hashing storage keys
     string  constant GROUP_KEY      = "COMMUNITY";
     string  constant MEMBER_KEY     = "MEMBER";
     string  constant INVITATION_KEY = "INVITATION";
 
-    /*
-     *  Role constants; admin is default 1
-     */
-
+    // Role constants; admin is default 1
     uint8   constant admin          = 1;
     uint8[] public   roles;
+    // TODO: in future, devise way for user to change expiration period
     uint expirationPeriod           = 3 days;
 
-    /* *  Nonce mapping and sequence (groupId)
-     */
-
+    // Nonce mapping and sequence (groupId)
     mapping(address => bytes32) public temporaryInvitation;
 
     struct Commit
@@ -35,24 +28,18 @@ contract GroupLogic is UsingExternalStorage, GroupI
         bool    revealed;
     }
 
+    // Ephemeral mapping for commit/reveal scheme for accepting invite
     mapping(address => Commit) public commits;
 
-     /*
-      * Enum for Invitation State
-      */
-
+    // Enum for Invitation State
     enum InvitationState { Pending, Revoked, Accepted }
     InvitationState InvState;
     InvitationState constant defaultState = InvitationState.Pending;
 
-    /*************************
-     *  Add roles
-     *************************/
-
-    /*
+    /**
+     *  addRoles
      *  @dev Sets roles additional to admin (role 1)
      *  @dev Roles are to be defined via documentation
-     *
      *  @param _additionalRoles uint8 array of additional roles
      */
 
@@ -62,7 +49,6 @@ contract GroupLogic is UsingExternalStorage, GroupI
         public onlyAdmin(4001)
     {
         roles = _additionalRoles;
-
         roles.push(1); // add admin role by default
 
         for (uint i = 0; i < roles.length; i++)
@@ -79,21 +65,16 @@ contract GroupLogic is UsingExternalStorage, GroupI
         }
     }
 
-    /*************************
-     *  Internal Functions
-     *************************/
-
-    /*
-     * @dev Creates a group with sender address and metadata.
-     * @dev Sets sender as role[0] as group creator with highest permissions.
-     *
-     * @dev Reverts if:
-     *      - neither params are provided
-     *
-     * @param _sender msg.sender OR ecrecovered address from meta-tx
-     * @param _metadataLocator IPFS hash for locating metadata
-     * @param _secretHashes array of secretHashes to be added as members
-     * @param _assignedRoles array of roles to be added as members
+    /**
+     *  createGroup
+     *  @dev creates a group with sender as group creator and with highest permissions
+     *  @dev Reverts if neither params are provided
+     *  @dev Reverts if more than 10 invitations are attached
+     *  @param _sender msg.sender OR ecrecovered address from meta-tx
+     *  @param _metadataLocator IPFS hash for locating metadata
+     *  @param _secretHashes array of secretHashes to be added as members
+     *  @param _assignedRoles array of roles to be added as members
+     *  @return bool upon successful tx
      */
 
     function createGroup(
@@ -106,9 +87,9 @@ contract GroupLogic is UsingExternalStorage, GroupI
         returns (bool)
     {
         // require length of invites to be <= index 9 (10 total invs)
-        require(_secretHashes.length <= 9);
-        require(_assignedRoles.length <= 9);
-        require(_assignedRoles.length == _secretHashes.length);
+        require(_secretHashes.length <= 10, "there are more than 10 secret hashes");
+        require(_assignedRoles.length <= 10, "there are more than 10 roles");
+        require(_assignedRoles.length == _secretHashes.length, "roles and length not equal");
 
         // moving groupId to external storage (as opposed to contract state var)
         uint256 groupId = storageContract.getUintValue(keccak256(
@@ -142,7 +123,8 @@ contract GroupLogic is UsingExternalStorage, GroupI
             _sender
         );
 
-        addMember(groupId, _sender, admin);
+        // call addMember function to add sender as admin to newly created group
+        addMember(_sender, groupId, admin);
 
         if(_secretHashes.length > 0)
         {
@@ -161,31 +143,40 @@ contract GroupLogic is UsingExternalStorage, GroupI
         return true;
     }
 
-    /*
+    /**
+     *  addMember
      *  @dev Creates a new member
-     *
-     *  @param _groupId From the sequence public uint256 (group id)
-     *  @param _sender  Address of sender who originated group creation
-     *  @param _role    Role (permissions level) address to be set to
-     *
-     *  @returns bool when member successfully added
+     *  @param _sender address of sender who originated group creation
+     *  @param _groupId from the sequence public uint256 (group id)
+     *  @param _role role (permissions level) address to be set to
+     *  @return bool when member is successfully added
      */
 
     function addMember(
+        address _sender,
         uint256 _groupId,
-        address _memberToAdd,
         uint8 _role
     )
         internal
         returns (bool)
     {
         storageContract.putUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, _memberToAdd)),
+            abi.encodePacked(MEMBER_KEY, _groupId, _sender)),
             _role
         );
 
-        emit MemberAdded(_memberToAdd, _groupId, _role);
+        // emit Member Added event
+        emit MemberAdded(_sender, _groupId, _role);
     }
+
+    /**
+     *  removeMember
+     *  @dev logic function to remove member from group
+     *  @param _sender tx sender
+     *  @param _groupId group id to remove member from
+     *  @param _accountToRemove account to be removed 
+     *  @return bool upon successful removal of member 
+     */
 
     function removeMember(
         address _sender,
@@ -205,6 +196,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
             )
         );
 
+        // ensure sender is an admin of the group
         require(uint8(signerRole) == admin);
 
         // retrieving previous role to populate MemberRemoved event
@@ -218,10 +210,21 @@ contract GroupLogic is UsingExternalStorage, GroupI
             0
         );
 
+        // emit Member Removed event
         emit MemberRemoved(_groupId, _accountToRemove, uint8(prevRole));
 
         return true;
     }
+
+    /**
+     *  changeMemberRole
+     *  @dev transaction function to change member role of a group
+     *  @param _sender tx sender
+     *  @param _groupId group id member belongs to
+     *  @param _accountToChange account being changed 
+     *  @param _newRole new role for the member
+     *  @return bool upon successful transaction
+     */
 
     function changeMemberRole(
         address _sender,
@@ -242,6 +245,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
             )
         );
 
+        // ensure sender is an admin of the group
         require(uint8(signerRole) == admin);
 
         // check if accountToChange belongs to the community
@@ -258,13 +262,23 @@ contract GroupLogic is UsingExternalStorage, GroupI
             _newRole
         );
 
+        // emit Member Role Changed event
         emit MemberRoleChanged(
             _groupId, _accountToChange, _newRole, uint8(prevRole));
 
         return true;
     }
 
-    // store invitation
+    /**
+     *  storeInvitation 
+     *  @dev logic function to store invitation 
+     *  @param _sender tx sender
+     *  @param _groupId group id user will be invited to
+     *  @param _role assigned role for the member
+     *  @param _secretHash hash generated by backend
+     *  @return bool upon successful transaction
+     */
+
     function storeInvitation(
         address _sender,
         uint256 _groupId,
@@ -332,8 +346,13 @@ contract GroupLogic is UsingExternalStorage, GroupI
         return true;
     }
 
-    /*
-     *  Revocation of a Pending Invitation
+    /**
+     *  revokeInvitation 
+     *  @dev logic function to revoke pending invitation 
+     *  @param _sender tx sender
+     *  @param _groupId group id to invite user to
+     *  @param _secretHash hash generated by backend
+     *  @return bool upon successful transaction
      */
 
     function revokeInvitation(
@@ -354,21 +373,28 @@ contract GroupLogic is UsingExternalStorage, GroupI
             )
         );
 
+        // ensure sender is an admin of the group
         require(uint8(signerRole) == admin);
 
+        // set invitation state to 'Revoked'
         storageContract.putUintValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE")),
             uint(InvitationState.Revoked)
         );
 
-        // emit recovation event
+        // emit Invitation Revoked event
         emit InvitationRevoked(_groupId, uint8(signerRole), _secretHash);
 
         return true;
     }
 
-    /*
-     *  Accepting an Invitation
+    /**
+     *  acceptInvitationCommit
+     *  @dev logic function to perform commit for accepting invitation
+     *  @param _sender tx sender
+     *  @param _groupId group id to invite user to
+     *  @param _addressSecretHash hash of (secret + address)
+     *  @return bool upon successful transaction
      */
 
     function acceptInvitationCommit(
@@ -387,6 +413,15 @@ contract GroupLogic is UsingExternalStorage, GroupI
         emit AcceptCommitted(_groupId, _addressSecretHash);
         return true;
     }
+
+    /**
+     *  acceptInvitationLogic
+     *  @dev logic function to accept invitation
+     *  @param _sender tx sender
+     *  @param _groupId group id of corresponding invite 
+     *  @param _secret hash 
+     *  @return bool upon successful transaction
+     */
 
     function acceptInvitationLogic(
         address _sender,
@@ -416,15 +451,9 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         // verify that hashed '_secret' == 'secretHash'
         require(
-            keccak256(abi.encodePacked(_secret))                == secretHash,
+            keccak256(abi.encodePacked(_secret)) == secretHash,
             "hashed provided 'secret' does not match stored 'secretHash'"
         );
-
-        // verify that hashed '_secret + sender address' == 'addressSecretHash'
-        //require(
-        //    keccak256(abi.encodePacked(_secret, _sender))       == tempCommit.commit,
-        //    "provided hashed '_secret + sender address does not match 'addressSecretHash"
-        //);
 
         // require current block to be greater than block the commit was recorded
         require(block.number > tempCommit.block);
@@ -439,13 +468,21 @@ contract GroupLogic is UsingExternalStorage, GroupI
         tempCommit.revealed = true;
 
         // implicit conversion from uint256 -> uint8 for 'role'
-        addMember(_groupId, _sender, uint8(role));
+        addMember(_sender, _groupId, uint8(role));
 
         return true;
     }
 
-    /*
-     *  Utility Functions
+    ///////////////////////////////////////////////////////////////////////
+    // UTILS
+    ///////////////////////////////////////////////////////////////////////
+
+    /**
+     *  getRole
+     *  @dev helper function to retrieve user role
+     *  @param _groupId groupId to retrieve role from
+     *  @param _addr address of user within group
+     *  @return uint256 role of user
      */
 
     function getRole(
@@ -460,6 +497,14 @@ contract GroupLogic is UsingExternalStorage, GroupI
             abi.encodePacked(MEMBER_KEY, _groupId, _addr))
         );
     }
+
+    /**
+     *  isAdmin 
+     *  @dev helper function to check if user is admin
+     *  @param _groupId groupId to perform admin check on
+     *  @param _addr address of proposed admin check
+     *  @return bool if address is an admin of provided group
+     */
 
     function isAdmin(
         uint256 _groupId,
@@ -476,6 +521,14 @@ contract GroupLogic is UsingExternalStorage, GroupI
         return true;
     }
 
+    /**
+     *  isMember
+     *  @dev helper function to check if user is member of provided group
+     *  @param _groupId groupId to perform member check on
+     *  @param _addr address of proposed member check
+     *  @return bool if address is a member of provided group
+     */
+
     function isMember(
         uint256 _groupId,
         address _addr
@@ -490,6 +543,15 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         return true;
     }
+
+    /**
+     *  getInvitationState 
+     *  @dev helper function to check what state invitation is in
+     *  @dev 0 = Pending, 1 = Revoked, 2 = Accepted
+     *  @param _groupId groupId to perform member check on
+     *  @param _secretHash hash of invitation
+     *  @return uint state of invitation
+     */
 
     function getInvitationState(
         uint256 _groupId,

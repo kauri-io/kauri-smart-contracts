@@ -74,6 +74,176 @@
             );
         });
 
+        it('should create a group when sending 8 invitation arrays', async() => {
+            let secHashOne      = await genSecretHash(secretOne);
+            let secHashTwo      = await genSecretHash(secretTwo);
+            let secHashThree    = await genSecretHash(secretThree);
+            let secHashFour     = await genSecretHash('1340');
+            let secHashFive     = await genSecretHash('1341');
+            let secHashSix      = await genSecretHash('1342');
+            let secHashSeven    = await genSecretHash('1343');
+            let secHashEight    = await genSecretHash('1344');
+            let secHashNine     = await genSecretHash('1345');
+            let secHashTen      = await genSecretHash('1346');
+
+            // tx reverting with 10 invites, but completing successfully with 8 invites
+            let eightSecretHashArray = [secHashOne, secHashTwo, secHashThree, secHashFour,
+                                   secHashFive, secHashSix, secHashSeven, secHashEight];
+
+            let eightRolesArray      = [2,2,2,2,2,2,2,2];
+
+            let groupCreated = await stageNewGroup(
+                accounts[0],
+                eightSecretHashArray,
+                eightRolesArray
+            )
+
+            let logGroupCreated     = groupCreated.logs[0];
+            let addMemberEvent      = groupCreated.logs[1];
+            let firstInvite         = groupCreated.logs[2];
+
+            let numEvents           = groupCreated.logs.length;
+
+            // emit 10 events (1 GroupCreated, 1 MemberAdded, 8 InvitationPending events)
+            assert.equal(
+                numEvents,
+                10,
+                "10 events were not emitted"
+            );
+
+            assert.equal(
+                logGroupCreated.event,
+                "GroupCreated",
+                "createGroup() call did not log 1 event"
+            );
+
+            assert.equal(
+                addMemberEvent.event,
+                "MemberAdded",
+                "createGroup() call did not log 'MemberAdded' event"
+            );
+
+            assert.equal(
+                firstInvite.event,
+                "InvitationPending",
+                "createGroup() call did not log 'InvitationPending' event"
+            );
+
+        });
+
+        it('should create a group when sending 9 invitation arrays', async() => {
+            let secHashOne      = await genSecretHash(secretOne);
+            let secHashTwo      = await genSecretHash(secretTwo);
+            let secHashThree    = await genSecretHash(secretThree);
+            let secHashFour     = await genSecretHash('1340');
+            let secHashFive     = await genSecretHash('1341');
+            let secHashSix      = await genSecretHash('1342');
+            let secHashSeven    = await genSecretHash('1343');
+            let secHashEight    = await genSecretHash('1344');
+            let secHashNine     = await genSecretHash('1345');
+            let secHashTen      = await genSecretHash('1346');
+
+            let nineSecretHashArray = [secHashOne,  secHashTwo, secHashThree, secHashFour,
+                                  secHashFive, secHashSix, secHashSeven, secHashEight, secHashNine];
+
+            let nineRolesArray      = [2,2,2,2,2,2,2,2,2];
+
+            let groupCreated = await stageNewGroup(
+                accounts[0],
+                nineSecretHashArray,
+                nineRolesArray
+            )
+
+            let groupCreatedEvent   = groupCreated.logs[0];
+            let addMemberEvent      = groupCreated.logs[1];
+            let firstInviteEvent    = groupCreated.logs[2];
+
+            let numberOfEvents           = groupCreated.logs.length;
+
+            // should emit 11 events (1 GroupCreated, 1 MemberAdded, 9 InvitationPending events)
+            assert.equal(
+                numberOfEvents,
+                11,
+                "11 events were not emitted"
+            );
+
+            assert.equal(
+                groupCreatedEvent.event,
+                "GroupCreated",
+                "createGroup() call did not log 1 event"
+            );
+
+            assert.equal(
+                addMemberEvent.event,
+                "MemberAdded",
+                "createGroup() call did not log 'MemberAdded' event"
+            );
+
+            assert.equal(
+                firstInviteEvent.event,
+                "InvitationPending",
+                "createGroup() call did not log 'InvitationPending' event"
+            );
+
+        });
+
+        it('should create a group when sending 10 invitation arrays', async() => {
+            let secHashOne      = await genSecretHash(secretOne);
+            let secHashTwo      = await genSecretHash(secretTwo);
+            let secHashThree    = await genSecretHash(secretThree);
+            let secHashFour     = await genSecretHash('1340');
+            let secHashFive     = await genSecretHash('1341');
+            let secHashSix      = await genSecretHash('1342');
+            let secHashSeven    = await genSecretHash('1343');
+            let secHashEight    = await genSecretHash('1344');
+            let secHashNine     = await genSecretHash('1345');
+            let secHashTen      = await genSecretHash('1346');
+
+            let tenSecretHashArray = [secHashOne,secHashTwo,secHashThree,secHashFour,
+                                  secHashFive,secHashSix,secHashSeven,secHashEight, secHashNine, secHashTen];
+
+            let tenRolesArray      = [2,2,2,2,2,2,2,2,2,2];
+
+            let groupCreated = await stageNewGroup(
+                accounts[0],
+                tenSecretHashArray,
+                tenRolesArray
+            );
+
+
+
+            let groupCreatedEvent   = groupCreated.logs[0];
+            let addMemberEvent      = groupCreated.logs[1];
+            let firstInviteEvent    = groupCreated.logs[2];
+
+            let numberOfEvents       = groupCreated.logs.length;
+
+            assert.equal(
+                numberOfEvents,
+                12,
+                "12 events were not emitted"
+            );
+
+            assert.equal(
+                groupCreatedEvent.event,
+                "GroupCreated",
+                "createGroup() call did not log 1 event"
+            );
+
+            assert.equal(
+                addMemberEvent.event,
+                "MemberAdded",
+                "createGroup() call did not log 'MemberAdded' event"
+            );
+
+            assert.equal(
+                firstInviteEvent.event,
+                "InvitationPending",
+                "createGroup() call did not log 'InvitationPending' event"
+            );
+
+        });
+
         it('should fail to create a group when sending 11 invitation arrays', async() => {
             let secHashOne      = await genSecretHash(secretOne);
             let secHashTwo      = await genSecretHash(secretTwo);
@@ -266,7 +436,7 @@
             assert.equal(
                 logInvStored.args.groupId,
                 0,
-                "storeInvitation() sequence does not match 0"
+                "storeInvitation() groupId does not match 0"
             );
 
             assert.equal(
