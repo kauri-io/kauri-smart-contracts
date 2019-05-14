@@ -49,7 +49,7 @@
         });
 
         it('should create a group without additional invitations', async () => {
-            let emptyHashArray    = [];
+            let emptyHashArray  = [];
             let emptyRolesArray = [];
 
             let newGroup        = await stageNewGroup(
@@ -650,7 +650,6 @@
         });
 
 
-        // //forever pending
         it('should successfully change a member as an admin', async() => {
           await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
 
@@ -665,7 +664,6 @@
 
         });
 
-        // //forever pending
         it('should fail to change a member as a non-admin', async() => {
           await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
 
@@ -706,6 +704,135 @@
             );
         });
 
+        it('should allow a member to leave group', async () => {
+            let newGroup            = await stageNewGroup(
+                accounts[0],
+                emptyHashArray,
+                emptyRolesArray
+            );
+
+            let acceptInv           = await stagePrepInvAndAccept(
+                groupId,
+                adminRole,
+                accounts[0],
+                accounts[1]
+            );
+
+            assert.equal(
+                await groupInstance.isMember.call(
+                    groupId,
+                    accounts[1]
+                ),
+                true
+            );
+
+            let prepLeaveGroup      = await groupInstance.prepareLeaveGroup(
+                groupId,
+                await getNonce(accounts[1])
+            );
+
+            let sig                 = await web3.eth.sign(
+                prepLeaveGroup,
+                web3.utils.toChecksumAddress(accounts[1])
+            );
+
+            let leaveGroup          = await groupInstance.leaveGroup(
+                groupId,
+                sig,
+                await getNonce(accounts[1])
+            );
+
+            await catchRevert(groupInstance.isMember.call(
+                groupId,
+                accounts[1]
+                )
+            );
+        })
+
+        it('should allow a member to leave group as a direct-tx', async () => {
+            let newGroup            = await stageNewGroup(
+                accounts[0],
+                emptyHashArray,
+                emptyRolesArray
+            );
+
+            await stagePrepInvAndAccept(
+                groupId,
+                adminRole,
+                accounts[0],
+                accounts[1]
+            );
+
+            // ensure the member belongs to the group before calling 'leaveGroup(uint256)'
+            assert.equal(
+                await groupInstance.isMember.call(
+                    groupId,
+                    accounts[1]
+                ),
+                true
+            );
+
+            // must use truffle's overloaded solidity mechanism here,
+            // or solidity thinks the '{ from: accounts[1] }' is the meta-tx function
+            let leaveGroup          = await groupInstance.methods['leaveGroup(uint256)'](
+                groupId,
+                { from: accounts[1] }
+            );
+
+            await catchRevert(groupInstance.isMember.call(
+                groupId,
+                accounts[1]
+                )
+            );
+        })
+
+        it('should revert on leave group if used does not already belong to group', async () => {
+            let newGroup            = await stageNewGroup(
+                accounts[0],
+                emptyHashArray,
+                emptyRolesArray
+            );
+
+            await stagePrepInvAndAccept(
+                groupId,
+                adminRole,
+                accounts[0],
+                accounts[1]
+            );
+
+            // ensure one other member belongs to the group before calling 'leaveGroup(uint256)'
+            // with an address that doesn't belong to the group
+            assert.equal(
+                await groupInstance.isMember.call(
+                    groupId,
+                    accounts[1]
+                ),
+                true
+            );
+
+            // now we call direct-tx 'leaveGroup' with accounts[2]
+            // must use truffle's overloaded solidity mechanism here,
+            // or solidity thinks the '{ from: accounts[2] }' is the meta-tx function
+            await catchRevert(await groupInstance.methods['leaveGroup(uint256)'](
+                groupId,
+                { from: accounts[2] }
+                )
+            );
+
+            assert.equal(
+                await groupInstance.isMember.call(
+                    groupId,
+                    accounts[1]
+                ),
+                true
+            );
+
+            //await catchRevert(groupInstance.isMember.call(
+            //    groupId,
+            //    accounts[1]
+            //    )
+            //);
+        })
 
         it('should store an invitation in pending state', async () => {
             let newGroup            = await stageNewGroup(

@@ -464,7 +464,7 @@ contract GroupConnector is GroupI, GroupLogic
      *  @dev uses msg.sender as sender; no meta-tx
      *  @param _groupId group id to remove member from
      *  @param _accountToRemove account to be removed from group
-     *
+     *  @return bool upon successful tx
      */
 
     function removeMember(
@@ -475,6 +475,82 @@ contract GroupConnector is GroupI, GroupLogic
         returns (bool)
     {
         removeMember(msg.sender, _groupId, _accountToRemove);
+    }
+
+    //////////////////////////////////////////////////
+    // LEAVE_GROUP
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] prepareLeaveGroup
+     *  @dev view function to prepare to leave group
+     *  @param _groupId group id where member belongs
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bytes32 hash to be signed by sender
+     */
+
+    function prepareLeaveGroup(
+        uint256 _groupId,
+        uint256 _nonce
+    )
+        external
+        pure 
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                _groupId,
+                "prepareLeaveGroup",
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] leaveGroup
+     *  @dev transaction function to directly remove self from group
+     *  @dev uses msg.sender as sender; no meta-tx
+     *  @param _groupId group id to remove member from
+     *  @param _signature sender's signature
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bool upon successful tx
+     */
+
+    function leaveGroup(
+        uint256 _groupId,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns(bool)
+    {
+        address signer = getSigner(
+            this.prepareLeaveGroup(
+                _groupId,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        removeMember(signer, _groupId, signer);
+    }
+
+    /**
+     *  [DIRECT-TX] leaveGroup 
+     *  @dev transaction function to directly remove self from group
+     *  @dev uses msg.sender as sender; no meta-tx
+     *  @param _groupId group id to remove member from
+     *  @return bool upon successful tx
+     */
+
+    function leaveGroup(
+        uint256 _groupId
+    )
+        external
+        returns (bool)
+    {
+        removeMember(msg.sender, _groupId, msg.sender);
     }
 
     //////////////////////////////////////////////////

@@ -186,18 +186,18 @@ contract GroupLogic is UsingExternalStorage, GroupI
         internal
         returns (bool)
     {
-        uint256 signerRole = storageContract.getUintValue(
-            keccak256(
-                abi.encodePacked(
-                    MEMBER_KEY,
-                    _groupId,
-                    _sender
-                )
-            )
-        );
+        //uint256 signerRole = storageContract.getUintValue(
+        //    keccak256(
+        //        abi.encodePacked(
+        //            MEMBER_KEY,
+        //            _groupId,
+        //            _sender
+        //        )
+        //    )
+        //);
 
         // ensure sender is an admin of the group
-        require(uint8(signerRole) == admin);
+        require(_accountToRemove == _sender || isAdmin(_groupId, _sender));
 
         // retrieving previous role to populate MemberRemoved event
         uint256 prevRole = storageContract.getUintValue(keccak256(
@@ -510,7 +510,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 _groupId,
         address _addr
     )
-        internal
+        public
         view
         returns (bool)
     {
@@ -533,7 +533,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         uint256 _groupId,
         address _addr
     )
-        internal
+        public
         view
         returns (bool)
     {
