@@ -494,7 +494,7 @@ contract GroupConnector is GroupI, GroupLogic
         uint256 _nonce
     )
         external
-        pure 
+        view 
         returns (bytes32)
     {
         return keccak256(
@@ -522,7 +522,7 @@ contract GroupConnector is GroupI, GroupLogic
         uint256 _nonce
     )
         external
-        returns(bool)
+        returns (bool)
     {
         address signer = getSigner(
             this.prepareLeaveGroup(
