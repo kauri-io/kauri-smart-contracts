@@ -256,6 +256,44 @@ interface GroupI
         returns (bool);
 
     ////////////////////////////////////////////////////////////////////
+    // LEAVE_GROUP
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX] prepareLeaveGroup
+     */
+
+    function prepareLeaveGroup(
+        uint256 _groupId,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32);
+
+    /**
+     * [META-TX] leaveGroup
+     */
+
+    function leaveGroup(
+        uint256 _groupId,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool);
+
+    /**
+     * [DIRECT-TX] leaveGroup
+     */
+
+    function leaveGroup(
+        uint256 _groupId
+    )
+        external
+        returns (bool);
+
+    ////////////////////////////////////////////////////////////////////
     // CHANGE_MEMBER
     ////////////////////////////////////////////////////////////////////
 
