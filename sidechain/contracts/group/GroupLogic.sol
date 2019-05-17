@@ -13,6 +13,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
     // Role constants; admin is default 1
     uint8   constant admin          = 1;
     uint8[] public   roles;
+
     // TODO: in future, devise way for user to change expiration period
     uint expirationPeriod           = 3 days;
 
@@ -128,10 +129,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
 
         if(_secretHashes.length > 0)
         {
-            for (uint i = 0; i < _secretHashes.length; i++)
-            {
-                storeInvitation(_sender, groupId, _assignedRoles[i], _secretHashes[i]);
-            }
+            storeBatchInvitation(_sender, groupId, _secretHashes, _assignedRoles);
         }
 
         // increment groupId
@@ -186,16 +184,6 @@ contract GroupLogic is UsingExternalStorage, GroupI
         internal
         returns (bool)
     {
-        //uint256 signerRole = storageContract.getUintValue(
-        //    keccak256(
-        //        abi.encodePacked(
-        //            MEMBER_KEY,
-        //            _groupId,
-        //            _sender
-        //        )
-        //    )
-        //);
-
         // ensure sender is an admin of the group
         require(_accountToRemove == _sender || isAdmin(_groupId, _sender));
 
@@ -344,6 +332,33 @@ contract GroupLogic is UsingExternalStorage, GroupI
         emit InvitationPending(_groupId, _role, _secretHash);
 
         return true;
+    }
+
+    /**
+     *  storeBatchInvitation
+     *  @dev stores batches of invitations (up to 10)
+     *  @param _sender msg.sender OR ecrecovered address from meta-tx
+     *  @param _groupId identifier of the group id
+     *  @param _secretHashes array of secretHashes to be added as members
+     *  @param _assignedRoles array of roles to be added as members
+     *  @return bool upon successful tx
+     */
+
+    function storeBatchInvitation(
+        address _sender,
+        uint256 _groupId,
+        bytes32[] memory _secretHashes,
+        uint8[] memory _assignedRoles
+    )
+        internal 
+        returns (bool)
+    {
+        // iterate through the additional invitations
+        for (uint i = 0; i < _secretHashes.length; i++)
+        {
+            // call 'storeInvitation' with each individual invitation
+            storeInvitation(_sender, _groupId, _assignedRoles[i], _secretHashes[i]);
+        }
     }
 
     /**

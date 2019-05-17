@@ -200,6 +200,96 @@ contract GroupConnector is GroupI, GroupLogic
         storeInvitation(msg.sender, _groupId, _role, _secretHash);
     }
 
+    /**
+     *  [META-TX PREPARE] prepareStoreBatchInvitation
+     *  @dev view function to prepare batch storage of invitation 
+     *  @dev tx sender address recovered using ecrecover
+     *  @param _groupId group id to prepare invitation for
+     *  @param _secretHashes array of hashes for invited users
+     *  @param _assignedRoles array of roles for invited users
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bytes32 hash to be signed by tx sender
+     */
+
+    function prepareBatchInvitation(
+        uint256 _groupId,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "prepareBatchInvitation",
+                _groupId,
+                _secretHashes,
+                _assignedRoles,
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] storeBatchInvitation
+     *  @dev transaction function to store a batch of inviations where transaction sender only acts as middle-man
+     *  @dev (meta-tx relayer) and the original sender is recovered from the signature
+     *  @param _groupId group id to prepare invitation for
+     *  @param _secretHashes array of hashes for invited users 
+     *  @param _assignedRoles array of roles for invited users 
+     *  @param _signature signature of private key signing _secretHash
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bool upon successful transaction
+     */
+
+    function storeBatchInvitation(
+        uint256 _groupId,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.prepareBatchInvitation(
+                _groupId,
+                _secretHashes,
+                _assignedRoles,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        storeBatchInvitation(signer, _groupId, _secretHashes, _assignedRoles);
+    }
+
+    /**
+     *  [DIRECT-TX] storeBatchInvitation
+     *  @dev transaction function to store a batch of invitations in a direct transaction
+     *  @dev (transaction sender == msg.sender)
+     *  @param _groupId group id to prepare invitation for
+     *  @param _secretHashes array of hashes of invited users
+     *  @param _assignedRoles array of roles of invited users
+     *  @return bool upon successful transaction
+     */
+
+    function storeBatchInvitation(
+        uint256 _groupId,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles
+    )
+        external
+        returns (bool)
+    {
+        storeBatchInvitation(msg.sender, _groupId, _secretHashes, _assignedRoles);
+    }
+
     //////////////////////////////////////////////////
     // REVOKE_INVITATION
     //////////////////////////////////////////////////
