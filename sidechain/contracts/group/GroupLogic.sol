@@ -353,6 +353,10 @@ contract GroupLogic is UsingExternalStorage, GroupI
         internal 
         returns (bool)
     {
+        require(_secretHashes.length <= 10, "there are more than 10 secret hashes");
+        require(_assignedRoles.length <= 10, "there are more than 10 roles");
+        require(_assignedRoles.length == _secretHashes.length, "roles and length not equal");
+
         // iterate through the additional invitations
         for (uint i = 0; i < _secretHashes.length; i++)
         {
