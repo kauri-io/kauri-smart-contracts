@@ -23,9 +23,17 @@
     const memberRole            = 2;
 
     // secret hashes
-    const secretOne             = await EthUtil.keccak256('1337');
-    const secretTwo             = await EthUtil.keccak256('1338');
-    const secretThree           = await EthUtil.keccak256('1339');
+    const secHash01             = await genSecretHash(await EthUtil.keccak256('1337'));
+    const secHash02             = await genSecretHash(await EthUtil.keccak256('1338'));
+    const secHash03             = await genSecretHash(await EthUtil.keccak256('1339'));
+    const secHash04             = await genSecretHash(await EthUtil.keccak256('1340'));
+    const secHash05             = await genSecretHash(await EthUtil.keccak256('1341'));
+    const secHash06             = await genSecretHash(await EthUtil.keccak256('1342'));
+    const secHash07             = await genSecretHash(await EthUtil.keccak256('1343'));
+    const secHash08             = await genSecretHash(await EthUtil.keccak256('1344'));
+    const secHash09             = await genSecretHash(await EthUtil.keccak256('1345'));
+    const secHash10             = await genSecretHash(await EthUtil.keccak256('1346'));
+    const secHash11             = await genSecretHash(await EthUtil.keccak256('1347'));
 
     // empty arrays
     const emptyHashArray        = [];
@@ -60,11 +68,7 @@
         });
 
         it('should create a group with 3 additional arrays', async() => {
-            let secHashOne      = await genSecretHash(secretOne);
-            let secHashTwo      = await genSecretHash(secretTwo);
-            let secHashThree    = await genSecretHash(secretThree);
-
-            let secretHashArray = [secHashOne, secHashTwo, secHashThree];
+            let secretHashArray = [secHash01, secHash02, secHash03];
             let rolesArray      = [2, 2, 2];
 
             let newGroup        = await stageNewGroup(
@@ -75,20 +79,8 @@
         });
 
         it('should create a group when sending 8 invitation arrays', async() => {
-            let secHashOne      = await genSecretHash(secretOne);
-            let secHashTwo      = await genSecretHash(secretTwo);
-            let secHashThree    = await genSecretHash(secretThree);
-            let secHashFour     = await genSecretHash('1340');
-            let secHashFive     = await genSecretHash('1341');
-            let secHashSix      = await genSecretHash('1342');
-            let secHashSeven    = await genSecretHash('1343');
-            let secHashEight    = await genSecretHash('1344');
-            let secHashNine     = await genSecretHash('1345');
-            let secHashTen      = await genSecretHash('1346');
-
-            // tx reverting with 10 invites, but completing successfully with 8 invites
-            let eightSecretHashArray = [secHashOne, secHashTwo, secHashThree, secHashFour,
-                                   secHashFive, secHashSix, secHashSeven, secHashEight];
+            let eightSecretHashArray = [secHash01, secHash02, secHash03, secHash04,
+                                   secHash05, secHash06, secHash07, secHash08];
 
             let eightRolesArray      = [2,2,2,2,2,2,2,2];
 
@@ -132,19 +124,19 @@
         });
 
         it('should create a group when sending 9 invitation arrays', async() => {
-            let secHashOne      = await genSecretHash(secretOne);
-            let secHashTwo      = await genSecretHash(secretTwo);
-            let secHashThree    = await genSecretHash(secretThree);
-            let secHashFour     = await genSecretHash('1340');
-            let secHashFive     = await genSecretHash('1341');
-            let secHashSix      = await genSecretHash('1342');
-            let secHashSeven    = await genSecretHash('1343');
-            let secHashEight    = await genSecretHash('1344');
-            let secHashNine     = await genSecretHash('1345');
-            let secHashTen      = await genSecretHash('1346');
+            let secHash01      = await genSecretHash('1337');
+            let secHash02      = await genSecretHash('1338');
+            let secHash03    = await genSecretHash('1339');
+            let secHash04     = await genSecretHash('1340');
+            let secHash05     = await genSecretHash('1341');
+            let secHash06      = await genSecretHash('1342');
+            let secHash07    = await genSecretHash('1343');
+            let secHash08    = await genSecretHash('1344');
+            let secHash09     = await genSecretHash('1345');
+            let secHash10      = await genSecretHash('1346');
 
-            let nineSecretHashArray = [secHashOne,  secHashTwo, secHashThree, secHashFour,
-                                  secHashFive, secHashSix, secHashSeven, secHashEight, secHashNine];
+            let nineSecretHashArray = [secHash01,  secHash02, secHash03, secHash04,
+                                  secHash05, secHash06, secHash07, secHash08, secHash09];
 
             let nineRolesArray      = [2,2,2,2,2,2,2,2,2];
 
@@ -188,19 +180,19 @@
         });
 
         it('should create a group when sending 10 invitation arrays', async() => {
-            let secHashOne      = await genSecretHash(secretOne);
-            let secHashTwo      = await genSecretHash(secretTwo);
-            let secHashThree    = await genSecretHash(secretThree);
-            let secHashFour     = await genSecretHash('1340');
-            let secHashFive     = await genSecretHash('1341');
-            let secHashSix      = await genSecretHash('1342');
-            let secHashSeven    = await genSecretHash('1343');
-            let secHashEight    = await genSecretHash('1344');
-            let secHashNine     = await genSecretHash('1345');
-            let secHashTen      = await genSecretHash('1346');
+            let secHash01      = await genSecretHash('1337');
+            let secHash02      = await genSecretHash('1338');
+            let secHash03    = await genSecretHash('1339');
+            let secHash04     = await genSecretHash('1340');
+            let secHash05     = await genSecretHash('1341');
+            let secHash06      = await genSecretHash('1342');
+            let secHash07    = await genSecretHash('1343');
+            let secHash08    = await genSecretHash('1344');
+            let secHash09     = await genSecretHash('1345');
+            let secHash10      = await genSecretHash('1346');
 
-            let tenSecretHashArray = [secHashOne,secHashTwo,secHashThree,secHashFour,
-                                  secHashFive,secHashSix,secHashSeven,secHashEight, secHashNine, secHashTen];
+            let tenSecretHashArray = [secHash01,secHash02,secHash03,secHash04,
+                                  secHash05,secHash06,secHash07,secHash08, secHash09, secHash10];
 
             let tenRolesArray      = [2,2,2,2,2,2,2,2,2,2];
 
@@ -245,21 +237,21 @@
         });
 
         it('should fail to create a group when sending 11 invitation arrays', async() => {
-            let secHashOne      = await genSecretHash(secretOne);
-            let secHashTwo      = await genSecretHash(secretTwo);
-            let secHashThree    = await genSecretHash(secretThree);
-            let secHashFour     = await genSecretHash('1340');
-            let secHashFive     = await genSecretHash('1341');
-            let secHashSix      = await genSecretHash('1342');
-            let secHashSeven    = await genSecretHash('1343');
-            let secHashEight    = await genSecretHash('1344');
-            let secHashNine     = await genSecretHash('1345');
-            let secHashTen      = await genSecretHash('1346');
-            let secHashEleven   = await genSecretHash('1347');
+            let secHash01      = await genSecretHash('1337');
+            let secHash02      = await genSecretHash('1338');
+            let secHash03    = await genSecretHash('1339');
+            let secHash04     = await genSecretHash('1340');
+            let secHash05     = await genSecretHash('1341');
+            let secHash06      = await genSecretHash('1342');
+            let secHash07    = await genSecretHash('1343');
+            let secHash08    = await genSecretHash('1344');
+            let secHash09     = await genSecretHash('1345');
+            let secHash10      = await genSecretHash('1346');
+            let secHash11   = await genSecretHash('1347');
 
-            let secretHashArray = [secHashOne,secHashTwo,secHashThree,secHashFour,
-                                  secHashFive,secHashSix,secHashSeven,secHashEight,secHashNine,
-                                  secHashTen, secHashEleven];
+            let secretHashArray = [secHash01,secHash02,secHash03,secHash04,
+                                  secHash05,secHash06,secHash07,secHash08,secHash09,
+                                  secHash10, secHash11];
 
             let rolesArray      = [2,2,2,2,2,2,2,2,2,2,2];
 
@@ -272,6 +264,71 @@
             );
 
         });
+
+        it('should store a batch of invitations', async() => {
+            let batchArray      = [secHash01, secHash02, secHash03, secHash04, secHash05, 
+                secHash06, secHash07, secHash08, secHash09, secHash10];
+            let rolesArray      = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+            
+            await stageNewGroup(
+                accounts[0],
+                emptyHashArray,
+                emptyRolesArray
+            );
+
+            let batchHash       = await groupInstance.prepareBatchInvitation(
+                groupId,
+                batchArray,
+                rolesArray,
+                await getNonce(accounts[0])
+            );
+
+            let sig             = await web3.eth.sign(
+                batchHash,
+                web3.utils.toChecksumAddress(accounts[0])
+            );
+
+            let batchInvite     = await groupInstance.storeBatchInvitation(
+                groupId,
+                batchArray,
+                rolesArray,
+                sig,
+                await getNonce(accounts[0])
+            );
+        })
+
+        it('should fail to store a batch of invitations greater than 10', async() => {
+            let batchArray      = [secHash01, secHash02, secHash03, secHash04, secHash05, 
+                secHash06, secHash07, secHash08, secHash09, secHash10, secHash11];
+            let rolesArray      = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+            
+            await stageNewGroup(
+                accounts[0],
+                emptyHashArray,
+                emptyRolesArray
+            );
+
+            let batchHash       = await groupInstance.prepareBatchInvitation(
+                groupId,
+                batchArray,
+                rolesArray,
+                await getNonce(accounts[0])
+            );
+
+            let sig             = await web3.eth.sign(
+                batchHash,
+                web3.utils.toChecksumAddress(accounts[0])
+            );
+
+            await catchRevert(groupInstance.storeBatchInvitation(
+                groupId,
+                batchArray,
+                rolesArray,
+                sig,
+                await getNonce(accounts[0])
+            ));
+
+        })
 
         it('should create a group as a direct-tx with no additional invitations', async() => {
             // send tx to createGroup
@@ -401,14 +458,12 @@
 
             let groupId         = 0;
             let role            = 1;
-            let secret          = web3.utils.toHex('1337');
-            let secretHash      = web3.utils.sha3(secret);
             let nonce           = await groupInstance.getNonce.call(accounts[0]);
 
             let inviteCreated   = await groupInstance.prepareInvitation(
                 groupId,
                 role,
-                secretHash,
+                secHash01,
                 nonce
             );
         });
@@ -455,23 +510,23 @@
                 emptyRolesArray
             );
 
-            let secretHash  = await genSecretHash(secretOne);
             let nonce       = await groupInstance.getNonce.call(accounts[0]);
             let msgHash     = await groupInstance.prepareInvitation(
                 groupId,
                 memberRole,
-                secretHash,
+                secHash01,
                 nonce
             );
 
             let sig         = await web3.eth.sign(
-                msgHash, web3.utils.toChecksumAddress(accounts[0])
+                msgHash, 
+                web3.utils.toChecksumAddress(accounts[0])
             );
 
             let storedInv = await groupInstance.storeInvitation(
                 groupId,
                 memberRole,
-                secretHash,
+                secHash01,
                 sig,
                 nonce
             );
@@ -502,7 +557,7 @@
             let secretHashArray = [];
             let rolesArray = [];
             let newGroup = await groupInstance.createGroup(METADATA_HASH, secretHashArray, rolesArray);
-            let secretHash =  await genSecretHash(secretOne);
+            let secretHash =  await genSecretHash('1337');
 
             await groupInstance.storeInvitation(groupId, memberRole, secretHash);
         });
@@ -511,33 +566,50 @@
           let secretHashArray = [];
           let rolesArray = [];
           let newGroup = await groupInstance.createGroup(METADATA_HASH, secretHashArray, rolesArray);
-          let secretHash = await genSecretHash(secretOne);
+          let secretHash = await genSecretHash('1337');
 
           await groupInstance.storeInvitation(groupId, memberRole, secretHash);
           await groupInstance.revokeInvitation(groupId,secretHash);
         });
 
         it('should accept an invitation as a direct-tx', async () => {
-          let secretHashArray = [];
-          let rolesArray = [];
-          let newGroup = await groupInstance.createGroup(METADATA_HASH,secretHashArray, rolesArray);
+            let secretHashArray = [];
+            let rolesArray = [];
 
-          let addressSecretHash = await web3.utils.soliditySha3(accounts[1], secretOne);
+            let newGroup = await groupInstance.createGroup(
+                METADATA_HASH, 
+                secretHashArray, 
+                rolesArray
+            );
 
-          await groupInstance.acceptInvitationCommit(groupId,addressSecretHash);
+            let addressSecretHash = await web3.utils.soliditySha3(
+                accounts[1], 
+                '1337'
+            );
 
+            await groupInstance.acceptInvitationCommit(
+                groupId, 
+                addressSecretHash
+            );
         });
 
         it('should remove a member as a direct-tx', async () => {
-         let secretHashArray = [];
-         let rolesArray = [];
-         let newGroup = await groupInstance.createGroup(METADATA_HASH, secretHashArray, rolesArray);
+            let secretHashArray = [];
+            let rolesArray = [];
 
-         let secretHash = await genSecretHash(secretOne);
+            let newGroup = await groupInstance.createGroup(
+                METADATA_HASH, 
+                secretHashArray, 
+                rolesArray
+            );
 
-         await groupInstance.storeInvitation(groupId,memberRole, secretHash);
+            await groupInstance.storeInvitation(
+                groupId, 
+                memberRole, 
+                secHash01 
+            );
 
-         await groupInstance.removeMember(groupId,accounts[1]);
+            await groupInstance.removeMember(groupId,accounts[1]);
         });
 
         it('should remove a member as a meta-tx', async () => {
@@ -574,7 +646,6 @@
 
         });
 
-
         it('should change member role as a direct-tx', async () => {
           let secretHashArray = [];
           let rolesArray = [];
@@ -593,7 +664,7 @@
 
         it('should fail to store an invitation when provided incorrect nonce', async () => {
           let incorrectNonce = 1;
-          let secretHash    = await genSecretHash(secretOne);
+          let secretHash    = await genSecretHash('1337');
           let msgHash       = await stagePrepInvitation(
               groupId,
               memberRole,
@@ -845,7 +916,7 @@
                 accounts[0]
             );
 
-            let secretHash          = await genSecretHash(secretOne);
+            let secretHash          = await genSecretHash('1337');
 
             let invState            = await groupInstance.getInvitationState.call(
                 groupId,
@@ -867,7 +938,7 @@
                 emptyRolesArray
             );
 
-            let secretHash    = await genSecretHash(secretOne);
+            let secretHash    = await genSecretHash('1337');
 
             let prepStageAndStore   = await stagePrepAndStoreInv(
                 accounts[0]
@@ -895,7 +966,7 @@
         }
 
         async function prepAndRevokeInvitation(addr) {
-            let secretHash      = await genSecretHash(secretOne);
+            let secretHash      = await genSecretHash('1337');
 
             let prepRevoke      = await groupInstance.prepareRevokeInvitation(
                 groupId,
@@ -967,7 +1038,7 @@
         async function stagePrepAndStoreInv(adminAddr) {
             let prepNonce       = await getNonce(adminAddr);
 
-            let secretHash      = await genSecretHash(secretOne);
+            let secretHash      = await genSecretHash('1337');
             let msgHash         = await groupInstance.prepareInvitation(
                 groupId,
                 memberRole,
@@ -994,12 +1065,11 @@
         };
 
         async function stagePrepInvAndAccept(groupId, role, adminAddr, recipientAddr) {
-            let secretHash      = await genSecretHash(secretOne);
             let prepInvNonce    = await getNonce(adminAddr);
             let msgHash         = await groupInstance.prepareInvitation(
                 groupId,
                 role,
-                secretHash,
+                secHash01,
                 prepInvNonce
             );
 
@@ -1012,13 +1082,13 @@
             let storedInv       = await groupInstance.storeInvitation(
                 groupId,
                 role,
-                secretHash,
+                secHash01,
                 sig,
                 storeInvNonce
             );
 
             let addrSecretHash  = await EthUtil.keccak256(
-                secretOne,
+                secHash01,
                 web3.utils.toChecksumAddress(recipientAddr)
             );
 
@@ -1044,7 +1114,7 @@
 
             let acceptInv       = await groupInstance.acceptInvitation(
                 groupId,
-                secretOne,
+                await EthUtil.keccak256('1337'),
                 recipientAddr
             );
 
@@ -1078,31 +1148,30 @@
             );
         };
 
-        //////////////////////////////////////////////////
-        // GENERATE_SECRET_HASH
-        //////////////////////////////////////////////////
-
-        async function genSecretHash(secretToHash) {
-            let bufferedHash    = EthUtil.keccak256(secretToHash);
-            let hexedHash       = EthUtil.bufferToHex(bufferedHash);
-
-            return hexedHash;
-        };
-
-        //////////////////////////////////////////////////
-        // GET_ROLE
-        //////////////////////////////////////////////////
-
-        async function getRole(groupId, addr) {
-            let memberRole      = await groupInstance.getRole.call(
-                groupId,
-                addr
-            );
-
-            return memberRole;
-        };
-
-
     });
+
+    //////////////////////////////////////////////////
+    // GET_ROLE
+    //////////////////////////////////////////////////
+
+    async function getRole(groupId, addr) {
+        let memberRole      = await groupInstance.getRole.call(
+            groupId,
+            addr
+        );
+
+        return memberRole;
+    };
+
+    //////////////////////////////////////////////////
+    // GENERATE_SECRET_HASH
+    //////////////////////////////////////////////////
+
+    async function genSecretHash(secretToHash) {
+        let bufferedHash    = EthUtil.keccak256(secretToHash);
+        let hexedHash       = EthUtil.bufferToHex(bufferedHash);
+
+        return hexedHash;
+    };
 
 })();
