@@ -92,7 +92,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         require(_assignedRoles.length <= 10, "there are more than 10 roles");
         require(_assignedRoles.length == _secretHashes.length, "roles and length not equal");
 
-        // moving groupId to external storage (as opposed to contract state var)
+        // groupId stored in external storage
         uint256 groupId = storageContract.getUintValue(keccak256(
             abi.encodePacked("groupId"))
         );
@@ -163,6 +163,15 @@ contract GroupLogic is UsingExternalStorage, GroupI
             _role
         );
 
+        // if _role is admin, increment adminCount
+        if(_role == 1)
+        {
+            storageContract.incrementUintValue(keccak256(
+                abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
+                1
+            );
+        }
+
         // emit Member Added event
         emit MemberAdded(_sender, _groupId, _role);
     }
@@ -186,6 +195,17 @@ contract GroupLogic is UsingExternalStorage, GroupI
     {
         // ensure sender is an admin of the group
         require(_accountToRemove == _sender || isAdmin(_groupId, _sender));
+
+        // check if accountToRemove is admin
+        if(isAdmin(_groupId, _accountToRemove))
+        {
+            // check that at least 2 admins remaining to prevent orphaning
+            require(getAdminCount(_groupId) > 1);
+            storageContract.decrementUintValue(keccak256(
+                abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
+                1
+            );
+        }
 
         // retrieving previous role to populate MemberRemoved event
         uint256 prevRole = storageContract.getUintValue(keccak256(
@@ -582,6 +602,25 @@ contract GroupLogic is UsingExternalStorage, GroupI
     {
         return storageContract.getUintValue(keccak256(
             abi.encodePacked(INVITATION_KEY, _groupId, _secretHash, "STATE"))
+        );
+    }
+
+    /**
+     *  getAdminCount
+     *  @dev helper function to check number of admins of individual group
+     *  @param _groupId groupId to perform admin count check on
+     *  @return uint256 number of admins of specified group
+     */
+
+    function getAdminCount(
+        uint256 _groupId
+    )
+        public
+        view
+        returns (uint256)
+    {
+        return storageContract.getUintValue(keccak256(
+            abi.encodePacked(GROUP_KEY, _groupId, "adminCount"))
         );
     }
 
