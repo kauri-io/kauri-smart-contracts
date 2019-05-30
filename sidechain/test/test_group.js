@@ -23,6 +23,7 @@
     const memberRole            = 2;
 
     // secret hashes
+    const secret                = '1337';
     const secHash01             = await genSecretHash(await EthUtil.keccak256('1337'));
     const secHash02             = await genSecretHash(await EthUtil.keccak256('1338'));
     const secHash03             = await genSecretHash(await EthUtil.keccak256('1339'));
@@ -180,19 +181,8 @@
         });
 
         it('should create a group when sending 10 invitation arrays', async() => {
-            let secHash01      = await genSecretHash('1337');
-            let secHash02      = await genSecretHash('1338');
-            let secHash03    = await genSecretHash('1339');
-            let secHash04     = await genSecretHash('1340');
-            let secHash05     = await genSecretHash('1341');
-            let secHash06      = await genSecretHash('1342');
-            let secHash07    = await genSecretHash('1343');
-            let secHash08    = await genSecretHash('1344');
-            let secHash09     = await genSecretHash('1345');
-            let secHash10      = await genSecretHash('1346');
-
-            let tenSecretHashArray = [secHash01,secHash02,secHash03,secHash04,
-                                  secHash05,secHash06,secHash07,secHash08, secHash09, secHash10];
+            let tenSecretHashArray = [secHash01, secHash02, secHash03, secHash04,
+                                   secHash05, secHash06, secHash07, secHash08, secHash09, secHash10];
 
             let tenRolesArray      = [2,2,2,2,2,2,2,2,2,2];
 
@@ -201,8 +191,6 @@
                 tenSecretHashArray,
                 tenRolesArray
             );
-
-
 
             let groupCreatedEvent   = groupCreated.logs[0];
             let addMemberEvent      = groupCreated.logs[1];
@@ -237,18 +225,6 @@
         });
 
         it('should fail to create a group when sending 11 invitation arrays', async() => {
-            let secHash01      = await genSecretHash('1337');
-            let secHash02      = await genSecretHash('1338');
-            let secHash03    = await genSecretHash('1339');
-            let secHash04     = await genSecretHash('1340');
-            let secHash05     = await genSecretHash('1341');
-            let secHash06      = await genSecretHash('1342');
-            let secHash07    = await genSecretHash('1343');
-            let secHash08    = await genSecretHash('1344');
-            let secHash09     = await genSecretHash('1345');
-            let secHash10      = await genSecretHash('1346');
-            let secHash11   = await genSecretHash('1347');
-
             let secretHashArray = [secHash01,secHash02,secHash03,secHash04,
                                   secHash05,secHash06,secHash07,secHash08,secHash09,
                                   secHash10, secHash11];
@@ -331,7 +307,6 @@
         })
 
         it('should create a group as a direct-tx with no additional invitations', async() => {
-            // send tx to createGroup
             let secretHashArray = [];
             let rolesArray      = [];
 
@@ -563,13 +538,13 @@
         });
 
         it('should revoke an invitation as a direct-tx', async () => {
-          let secretHashArray = [];
-          let rolesArray = [];
-          let newGroup = await groupInstance.createGroup(METADATA_HASH, secretHashArray, rolesArray);
-          let secretHash = await genSecretHash('1337');
+            let secretHashArray = [];
+            let rolesArray = [];
+            let newGroup = await groupInstance.createGroup(METADATA_HASH, secretHashArray, rolesArray);
+            let secretHash = await genSecretHash('1337');
 
-          await groupInstance.storeInvitation(groupId, memberRole, secretHash);
-          await groupInstance.revokeInvitation(groupId,secretHash);
+            await groupInstance.storeInvitation(groupId, memberRole, secretHash);
+            await groupInstance.revokeInvitation(groupId,secretHash);
         });
 
         it('should accept an invitation as a direct-tx', async () => {
@@ -581,6 +556,8 @@
                 secretHashArray, 
                 rolesArray
             );
+
+            
 
             let addressSecretHash = await web3.utils.soliditySha3(
                 accounts[1], 
@@ -594,22 +571,19 @@
         });
 
         it('should remove a member as a direct-tx', async () => {
-            let secretHashArray = [];
-            let rolesArray = [];
-
-            let newGroup = await groupInstance.createGroup(
-                METADATA_HASH, 
-                secretHashArray, 
-                rolesArray
+            await directAcceptInv(
+                accounts[0], 
+                accounts[1], 
+                secHash01, 
+                memberRole
             );
-
-            await groupInstance.storeInvitation(
+             
+            await groupInstance.methods['removeMember(uint256,address)'](
                 groupId, 
-                memberRole, 
-                secHash01 
+                accounts[1], 
+                { from: accounts[0] }
             );
 
-            await groupInstance.removeMember(groupId,accounts[1]);
         });
 
         it('should remove a member as a meta-tx', async () => {
@@ -626,39 +600,40 @@
                 accounts[1]
             );
 
-            let prepRemove  = await groupInstance.prepareRemoveMember(
+            let remHash = await groupInstance.methods['prepareRemoveMember(uint256,address,uint256)'](
                 groupId,
                 accounts[1],
-                await getNonce(accounts[0])
+                await getNonce(accounts[0]),
+                { from: accounts[0] }
             );
 
-            let sig         = await web3.eth.sign(
-                prepRemove,
-                web3.utils.toChecksumAddress(accounts[0])
+            let remSig = await web3.eth.sign(
+                remHash,
+                accounts[0]
             );
 
-            let removeMem   = await groupInstance.removeMember(
+            await groupInstance.methods['removeMember(uint256,address,bytes,uint256)'](
                 groupId,
                 accounts[1],
-                sig,
-                await getNonce(accounts[0])
+                remSig,
+                await getNonce(accounts[0]),
+                { from: accounts[0] }
             );
-
         });
 
         it('should change member role as a direct-tx', async () => {
-          let secretHashArray = [];
-          let rolesArray = [];
-          let newGroup = await groupInstance.createGroup(METADATA_HASH,secretHashArray,rolesArray);
+            let secretHashArray = [];
+            let rolesArray = [];
+            let newGroup = await groupInstance.createGroup(METADATA_HASH,secretHashArray,rolesArray);
 
-          await stagePrepInvAndAccept(
-            groupId,
-            memberRole,
-            accounts[0],
-            accounts[1]
-          );
+            await stagePrepInvAndAccept(
+                groupId,
+                memberRole,
+                accounts[0],
+                accounts[1]
+            );
 
-          await groupInstance.changeMemberRole(groupId,accounts[1],adminRole);
+            await groupInstance.changeMemberRole(groupId,accounts[1],adminRole);
         });
 
 
@@ -722,34 +697,106 @@
 
 
         it('should successfully change a member as an admin', async() => {
-          await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
+            await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
 
-          await stagePrepInvAndAccept(
-            groupId,
-            memberRole,
-            accounts[0],
-            accounts[1]
-          );
+            await stagePrepInvAndAccept(
+                groupId,
+                memberRole,
+                accounts[0],
+                accounts[1]
+            );
 
-          await changeMemberRole(accounts[0], accounts[1], adminRole)
+            await changeMemberRole(accounts[0], accounts[1], adminRole)
 
         });
 
         it('should fail to change a member as a non-admin', async() => {
-          await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
+            await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
 
-          await stagePrepInvAndAccept(
-            groupId,
-            memberRole,
-            accounts[0],
-            accounts[1]
-          );
+            await stagePrepInvAndAccept(
+                groupId,
+                memberRole,
+                accounts[0],
+                accounts[1]
+            );
 
-          await catchRevert(
-              changeMemberRole(accounts[1], accounts[1], adminRole)
-          );
+            await catchRevert(
+                changeMemberRole(accounts[1], accounts[1], adminRole)
+            );
 
         });
+        
+        it('should be unable to orphan a group when removing member', async() => {
+            await stageNewGroup(
+                accounts[0],
+                emptyHashArray,
+                emptyRolesArray
+            );
+
+            await stagePrepInvAndAccept(
+                groupId,
+                memberRole,
+                accounts[0],
+                accounts[1]
+            );
+
+            let remHash = await groupInstance.methods['prepareRemoveMember(uint256,address,uint256)'](
+                groupId,
+                accounts[0],
+                await getNonce(accounts[0]),
+                { from: accounts[0] }
+            );
+
+            let remSig = await web3.eth.sign(
+                remHash,
+                accounts[0]
+            );
+
+            await catchRevert(groupInstance.methods['removeMember(uint256,address,bytes,uint256)'](
+                groupId,
+                accounts[0],
+                remSig,
+                await getNonce(accounts[0]),
+                { from: accounts[0] }
+            ));
+        })
+
+        it('should be unable to orphan a group when changing member', async() => {
+            await stageNewGroup(
+                accounts[0],
+                emptyHashArray,
+                emptyRolesArray
+            );
+
+            await stagePrepInvAndAccept(
+                groupId,
+                memberRole,
+                accounts[0],
+                accounts[1]
+            );
+
+            let chgHash = await groupInstance.methods['prepareChangeMemberRole(uint256,address,uint8,uint256)'](
+                groupId,
+                accounts[0],
+                memberRole,
+                await getNonce(accounts[0]),
+                { from: accounts[0] }
+            );
+
+            let chgSig = await web3.eth.sign(
+                chgHash,
+                accounts[0]
+            );
+
+            await catchRevert(groupInstance.methods['changeMemberRole(uint256,address,uint8,bytes,uint256)'](
+                groupId,
+                accounts[0],
+                memberRole,
+                chgSig,
+                await getNonce(accounts[0]),
+                { from: accounts[0] }
+            ));
+        })
 
         it('should fail to change a member because member does not belong to group', async() => {
           await stageNewGroup(accounts[0], emptyHashArray, emptyRolesArray);
@@ -1119,6 +1166,126 @@
             );
 
         };
+
+        async function metaAcceptInv(groupCreator, accountToInvite, secret, userRole) {
+            let secretHashArray = [];
+            let rolesArray = [];
+
+            let prepGroupNonce = await getNonce(groupCreator);
+
+            let prepHash = await groupInstance.prepareCreateGroup(
+                METADATA_HASH,
+                secretHashArray,
+                rolesArray,
+                prepGroupNonce
+            );
+
+            let sig = await web3.eth.sign(
+                prepHash,
+                web3.utils.toChecksumAddress(groupCreator)
+            );
+
+            await groupInstance.methods['createGroup(bytes32,bytes32[],uint8[],bytes,uint256)'](
+                METADATA_HASH,
+                secretHashArray,
+                rolesArray,
+                sig,
+                prepGroupNonce
+            );
+           
+            let newNonce = await getNonce(groupCreator);
+            let invHash = await groupInstance.prepareInvitation(
+                groupId,
+                userRole,
+                await genSecretHash(secret),
+                newNonce
+            );
+
+            let invSig = await web3.eth.sign(
+                prepHash,
+                web3.utils.toChecksumAddress(groupCreator)
+            );
+
+            await groupInstance.methods['storeInvitation(uint256,uint8,bytes32,bytes,uint256)'](
+                groupId,
+                userRole,
+                await genSecretHash(secret),
+                invSig,
+                newNonce
+            );
+
+            //let addressSecretHash = await web3.utils.soliditySha3(
+            //    accountToInvite,
+            //    secret 
+            //);
+
+            //let acceptHash = await groupInstance.prepareAcceptInvitationCommit(
+            //    groupId,
+            //    addressSecretHash,
+            //    await getNonce(accountToInvite)
+            //);
+
+            //let acceptSig = await web3.eth.sign(
+            //    acceptHash,
+            //    accountToInvite
+            //);
+
+            //await groupInstance.methods['acceptInvitationCommit(uint256,bytes32,bytes,uint256)'](
+            //    groupId,
+            //    addressSecretHash,
+            //    acceptSig,
+            //    await getNonce(accountToInvite)
+            //);
+
+            //await groupInstance.acceptInvitation(
+            //    groupId,
+            //    secret,
+            //    accountToInvite
+            //);
+            
+        }
+
+        async function directAcceptInv(groupCreator, accountToInvite, secret, userRole) {
+            let secretHashArray = [];
+            let rolesArray = [];
+
+            await groupInstance.methods['createGroup(bytes32,bytes32[],uint8[])'](
+                METADATA_HASH, 
+                secretHashArray, 
+                rolesArray,
+                { from: groupCreator }
+            );
+
+            let invHash = await groupInstance.prepareInvitation(
+                groupId,
+                userRole,
+                await genSecretHash(secret),
+                await getNonce(groupCreator)
+            );
+
+            await groupInstance.storeInvitation(
+                groupId,
+                userRole,
+                await genSecretHash(secret)
+            );
+
+            let addressSecretHash = await web3.utils.soliditySha3(
+                accountToInvite,
+                secret
+            );
+
+            await groupInstance.acceptInvitationCommit(
+                groupId,
+                addressSecretHash
+            );
+
+            await groupInstance.acceptInvitation(
+                groupId,
+                secret,
+                accountToInvite
+            );
+
+        }
 
         //////////////////////////////////////////////////
         // CHANGE_MEMBER
