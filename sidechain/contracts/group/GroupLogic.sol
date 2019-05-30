@@ -164,7 +164,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         );
 
         // if _role is admin, increment adminCount
-        if(_role == 1)
+        if(_role == admin)
         {
             storageContract.incrementUintValue(keccak256(
                 abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
@@ -194,13 +194,14 @@ contract GroupLogic is UsingExternalStorage, GroupI
         returns (bool)
     {
         // ensure sender is an admin of the group
-        require(_accountToRemove == _sender || isAdmin(_groupId, _sender));
+        require(_accountToRemove == _sender || isAdmin(_groupId, _sender) == true, "account to remove not sender or sender not admin");
 
         // check if accountToRemove is admin
-        if(isAdmin(_groupId, _accountToRemove))
+        if(isAdmin(_groupId, _accountToRemove) == true)
         {
             // check that at least 2 admins remaining to prevent orphaning
-            require(getAdminCount(_groupId) > 1);
+            require(getAdminCount(_groupId) > 1, "user not an admin");
+
             storageContract.decrementUintValue(keccak256(
                 abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
                 1
@@ -256,6 +257,11 @@ contract GroupLogic is UsingExternalStorage, GroupI
         // ensure sender is an admin of the group
         require(uint8(signerRole) == admin);
 
+        if(isAdmin(_groupId, _accountToChange) == true)
+        {
+            require(getAdminCount(_groupId) > 1);
+        }
+
         // check if accountToChange belongs to the community
         isMember(_groupId, _accountToChange);
 
@@ -297,7 +303,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         returns (bool)
     {
         // require address storing invite is an admin
-        require(isAdmin(_groupId, _sender), "_sender is not an admin");
+        require(isAdmin(_groupId, _sender) == true, "_sender is not an admin");
 
         // require role to exist
         require(storageContract.getBooleanValue(
@@ -553,11 +559,15 @@ contract GroupLogic is UsingExternalStorage, GroupI
         view
         returns (bool)
     {
-        require(storageContract.getUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, _addr))
-        ) == 1);
-
-        return true;
+        if(storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _addr))) == 1)
+        {
+            return true;
+        } 
+        else 
+        {
+            return false;
+        }
     }
 
     /**
