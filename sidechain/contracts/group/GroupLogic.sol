@@ -50,7 +50,7 @@ contract GroupLogic is UsingExternalStorage, GroupI
         public onlyAdmin(4001)
     {
         roles = _additionalRoles;
-        roles.push(1); // add admin role by default
+        roles.push(admin); // add admin role by default
 
         for (uint i = 0; i < roles.length; i++)
         {
@@ -193,8 +193,16 @@ contract GroupLogic is UsingExternalStorage, GroupI
         internal
         returns (bool)
     {
+        // retrieving previous role to populate MemberRemoved event
+        uint256 prevRole = storageContract.getUintValue(keccak256(
+            abi.encodePacked(MEMBER_KEY, _groupId, _accountToRemove))
+        );
+
+        require(prevRole > 0, "account to remove is not a member of group");
+
         // ensure sender is an admin of the group
-        require(_accountToRemove == _sender || isAdmin(_groupId, _sender) == true, "account to remove not sender or sender not admin");
+        require(_accountToRemove == _sender || isAdmin(_groupId, _sender) == true, 
+                "account to remove not sender or sender not admin");
 
         // check if accountToRemove is admin
         if(isAdmin(_groupId, _accountToRemove) == true)
@@ -207,11 +215,6 @@ contract GroupLogic is UsingExternalStorage, GroupI
                 1
             );
         }
-
-        // retrieving previous role to populate MemberRemoved event
-        uint256 prevRole = storageContract.getUintValue(keccak256(
-            abi.encodePacked(MEMBER_KEY, _groupId, _accountToRemove))
-        );
 
         // now set member's role to 0
         storageContract.putUintValue(keccak256(
@@ -257,9 +260,21 @@ contract GroupLogic is UsingExternalStorage, GroupI
         // ensure sender is an admin of the group
         require(uint8(signerRole) == admin);
 
+        // only two roles at this point, admin and moderator
+        // if admin is the account to change, then decrement
+        // if moderator is the count to change, then increment
         if(isAdmin(_groupId, _accountToChange) == true)
         {
             require(getAdminCount(_groupId) > 1);
+            storageContract.decrementUintValue(keccak256(
+                abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
+                1
+            );
+        } else {
+            storageContract.incrementUintValue(keccak256(
+                abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
+                1
+            );
         }
 
         // check if accountToChange belongs to the community
@@ -494,10 +509,16 @@ contract GroupLogic is UsingExternalStorage, GroupI
             abi.encodePacked(INVITATION_KEY, _groupId, keccak256(abi.encodePacked(_secret)), "ROLE")
         ));
 
-        // verify that hashed '_secret' == 'secretHash'
+        //verify that hashed '_secret' == 'secretHash'
         require(
             keccak256(abi.encodePacked(_secret)) == secretHash,
             "hashed provided 'secret' does not match stored 'secretHash'"
+        );
+
+        //verify that commit hash is for correct address'
+        require(
+            keccak256(abi.encodePacked(_secret, _sender)) == tempCommit.commit,
+            "provided sender does not match sender address in commit signature"
         );
 
         // require current block to be greater than block the commit was recorded
