@@ -201,7 +201,8 @@ contract GroupLogic is UsingExternalStorage, GroupI
         require(prevRole > 0, "account to remove is not a member of group");
 
         // ensure sender is an admin of the group
-        require(_accountToRemove == _sender || isAdmin(_groupId, _sender) == true, "account to remove not sender or sender not admin");
+        require(_accountToRemove == _sender || isAdmin(_groupId, _sender) == true, 
+                "account to remove not sender or sender not admin");
 
         // check if accountToRemove is admin
         if(isAdmin(_groupId, _accountToRemove) == true)
@@ -259,9 +260,21 @@ contract GroupLogic is UsingExternalStorage, GroupI
         // ensure sender is an admin of the group
         require(uint8(signerRole) == admin);
 
+        // only two roles at this point, admin and moderator
+        // if admin is the account to change, then decrement
+        // if moderator is the count to change, then increment
         if(isAdmin(_groupId, _accountToChange) == true)
         {
             require(getAdminCount(_groupId) > 1);
+            storageContract.decrementUintValue(keccak256(
+                abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
+                1
+            );
+        } else {
+            storageContract.incrementUintValue(keccak256(
+                abi.encodePacked(GROUP_KEY, _groupId, "adminCount")),
+                1
+            );
         }
 
         // check if accountToChange belongs to the community

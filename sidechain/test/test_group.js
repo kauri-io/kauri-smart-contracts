@@ -654,9 +654,49 @@
                 accounts[1]
             );
 
-            await groupInstance.changeMemberRole(groupId,accounts[1],adminRole);
+            await groupInstance.changeMemberRole(groupId, accounts[1], adminRole);
         });
 
+        it('should decrement admin count when changing existing admin to moderator', async () => {
+            let secretHashArray = [];
+            let rolesArray = [];
+            let newGroup = await groupInstance.createGroup(METADATA_HASH,secretHashArray,rolesArray);
+
+            await stagePrepInvAndAccept(
+                groupId,
+                memberRole,
+                accounts[0],
+                accounts[1]
+            );
+
+            await groupInstance.changeMemberRole(groupId, accounts[1], adminRole);
+            let preAdminCount = await groupInstance.getAdminCount(groupId);
+            assert.equal(preAdminCount, 2);
+
+            await groupInstance.changeMemberRole(groupId, accounts[1], memberRole);
+            let postAdminCount = await groupInstance.getAdminCount(groupId);
+            assert.equal(postAdminCount, 1);
+        });
+
+        it('should increment admin count when changing existing moderator to admin', async () => {
+            let secretHashArray = [];
+            let rolesArray = [];
+            let newGroup = await groupInstance.createGroup(METADATA_HASH,secretHashArray,rolesArray);
+
+            await stagePrepInvAndAccept(
+                groupId,
+                memberRole,
+                accounts[0],
+                accounts[1]
+            );
+
+            let preAdminCount = await groupInstance.getAdminCount(groupId);
+            assert.equal(preAdminCount, 1);
+            await groupInstance.changeMemberRole(groupId, accounts[1], adminRole);
+
+            let postAdminCount = await groupInstance.getAdminCount(groupId);
+            assert.equal(postAdminCount, 2);
+        });
 
         it('should fail to store an invitation when provided incorrect nonce', async () => {
           let incorrectNonce = 1;
@@ -1226,36 +1266,6 @@
                 invSig,
                 newNonce
             );
-
-            //let addressSecretHash = await web3.utils.soliditySha3(
-            //    accountToInvite,
-            //    secret 
-            //);
-
-            //let acceptHash = await groupInstance.prepareAcceptInvitationCommit(
-            //    groupId,
-            //    addressSecretHash,
-            //    await getNonce(accountToInvite)
-            //);
-
-            //let acceptSig = await web3.eth.sign(
-            //    acceptHash,
-            //    accountToInvite
-            //);
-
-            //await groupInstance.methods['acceptInvitationCommit(uint256,bytes32,bytes,uint256)'](
-            //    groupId,
-            //    addressSecretHash,
-            //    acceptSig,
-            //    await getNonce(accountToInvite)
-            //);
-
-            //await groupInstance.acceptInvitation(
-            //    groupId,
-            //    secret,
-            //    accountToInvite
-            //);
-            
         }
 
         async function directAcceptInv(groupCreator, accountToInvite, secret, userRole) {
