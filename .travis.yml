@@ -197,3 +197,4 @@ jobs:
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30; fi
 >>>>>>> dev2
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
+
