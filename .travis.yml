@@ -63,10 +63,11 @@ after_install:
 - docker kill $(docker ps -q)
 jobs:
   include:
-  - stage: solidity-tests
+  - stage: solidity-tests-mainchain
     install:
-    - npm install
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
+    - cd mainchain
+    - npm install
     script:
     - ../travis/runTests.sh
     after_script:
@@ -115,20 +116,10 @@ jobs:
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
     - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
-    - docker-compose -f docker/docker-compose-truffle-build.yml build
-    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
-    - docker ps
-    - docker exec -it docker_truffle-build_1 npm install
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - echo $SMART_CONTRACTS_VERSION
-<<<<<<< HEAD
-    - bash ./k8s/run_migrations.sh
-    - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION
-    - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
-    - kubectl delete pods -l app=web3-auth
-=======
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     - bash ./k8s/run_migrations_mainchain.sh
     - bash ./k8s/run_migrations_sidechain.sh
@@ -136,7 +127,6 @@ jobs:
     - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
     - kubectl delete pods -l app=web3-auth
     - sleep 30
->>>>>>> dev2
     - kubectl delete pods -l app=monolith
   - stage: deploy-dev2
     if: "(NOT type IN (pull_request) AND (branch = dev2))"
@@ -147,30 +137,18 @@ jobs:
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
-    - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
-    - docker-compose -f docker/docker-compose-truffle-build.yml build
-    - docker-compose -f docker/docker-compose-truffle-build.yml up -d
-    - docker ps
-    - docker exec -it docker_truffle-build_1 npm install
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - echo $SMART_CONTRACTS_VERSION
-<<<<<<< HEAD
-    - bash ./k8s/run_migrations.sh
-=======
     - npm install -g ganache-cli@6.2.3 truffle@5.0.1
     - bash ./k8s/run_migrations_mainchain.sh
     - bash ./k8s/run_migrations_sidechain.sh
->>>>>>> dev2
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
     - bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT2
     # Restart middleware pods
     - kubectl delete pods -l app=web3-auth
-<<<<<<< HEAD
-=======
     - sleep 30
->>>>>>> dev2
     - kubectl delete pods -l app=monolith
   - stage: deploy-dev
     if: "(NOT env(AUTHOR_NAME) =~ ^Travis AND (NOT type IN (pull_request)) AND (branch
@@ -188,13 +166,11 @@ jobs:
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then npm install -g ganache-cli@6.2.3 truffle@5.0.1; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then echo $SMART_CONTRACTS_VERSION; fi
-    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations.sh; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations_mainchain.sh; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/run_migrations_sidechain.sh; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION-SNAPSHOT; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
-<<<<<<< HEAD
-=======
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30; fi
->>>>>>> dev2
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
 
