@@ -100,6 +100,52 @@ interface GroupI
         external
         returns (bool);
 
+    /**
+     * [META-TX] prepareBatchInvitation
+     * prepare function to store a batch of invitations where transaction sender only acts as a middle-man
+     * (meta-tx relayer) and the original sender is recovered from the signature.
+     */
+
+    function prepareBatchInvitation(
+        uint256 _groupId,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32);
+
+    /**
+     * [META-TX] storeBatchInvitation
+     * Transaction function to store a batch of invitations where transaction sender only acts as a middle-man
+     * (meta-tx relayer) and the original sender is recovered from the signature.
+     */
+
+    function storeBatchInvitation(
+        uint256 _groupId,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool);
+
+    /**
+     * [DIRECT-TX] storeBatchInvitation
+     * Transaction function to store a batch of invitations via a direct transaction
+     * (transaction sender == msg.sender)
+     */
+
+    function storeBatchInvitation(
+        uint256 _groupId,
+        bytes32[] calldata _secretHashes,
+        uint8[] calldata _assignedRoles
+    )
+        external
+        returns (bool);
+
     ////////////////////////////////////////////////////////////////////
     // REVOKE INVITATION
     ////////////////////////////////////////////////////////////////////
@@ -251,6 +297,44 @@ interface GroupI
     function removeMember(
         uint256 _groupId,
         address _acountToRemove
+    )
+        external
+        returns (bool);
+
+    ////////////////////////////////////////////////////////////////////
+    // LEAVE_GROUP
+    ////////////////////////////////////////////////////////////////////
+
+    /**
+     * [META-TX] prepareLeaveGroup
+     */
+
+    function prepareLeaveGroup(
+        uint256 _groupId,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32);
+
+    /**
+     * [META-TX] leaveGroup
+     */
+
+    function leaveGroup(
+        uint256 _groupId,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool);
+
+    /**
+     * [DIRECT-TX] leaveGroup
+     */
+
+    function leaveGroup(
+        uint256 _groupId
     )
         external
         returns (bool);
