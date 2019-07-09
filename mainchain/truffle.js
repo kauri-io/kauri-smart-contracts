@@ -34,17 +34,24 @@ module.exports = {
       network_id: '4',
       gas: 4500000,
       gasPrice: 21000000000
+    },
+    coverage: {
+      host: 'localhost',
+      network_id: '*',
+      port: 8555,
+      gas: 0xfffffffffff,
+      gasPrice: 0x01
     }
   },
   compilers: {
    solc: {
-     version: "0.4.24"  // ex:  "0.4.20". (Default: Truffle's installed solc)
-   }
- },
-  solc: {
-    optimizer: {
-      enabled: true,
-      runs: 200
+     version: "0.4.24", // ex:  "0.4.20". (Default: Truffle's installed solc)
+     settings: {          // See the solidity docs for advice about optimization and evmVersion
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
     }
   }
+ }
 }

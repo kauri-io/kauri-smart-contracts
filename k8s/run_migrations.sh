@@ -16,6 +16,7 @@ fi
 
 cp secrets.json mainchain/.
 cd mainchain
+npm install
 
 if [ "${MIGRATION_MODE}" == "reset" ]; then
   migrationParameters="--reset"

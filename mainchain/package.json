@@ -1,0 +1,24 @@
+{
+  "name": "kauri-mainchain-contracts",
+  "version": "0.0.1",
+  "description": "Kauri protocol for incentivisation of knowledge creation",
+  "scripts": {
+    "test": "truffle test",
+    "coverage": "./node_modules/.bin/solidity-coverage"
+  },
+  "author": "Craig Williams <craig.williams@consensys.net>",
+  "dependencies": {
+    "any-promise": "1.3.0",
+    "bindings": "1.5.0",
+    "bs58": "4.0.1",
+    "ethereumjs-util": "5.2.0",
+    "ethereumjs-wallet": "0.6.0",
+    "openzeppelin-solidity": "1.12.0",
+    "truffle": "5.0.1",
+    "truffle-hdwallet-provider": "1.0.5"
+  },
+  "devDependencies": {
+    "coveralls": "^3.0.3",
+    "solidity-coverage": "^0.6.0-beta.5"
+  }
+}
