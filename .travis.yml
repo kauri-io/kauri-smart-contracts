@@ -106,6 +106,15 @@ jobs:
     - git add .
     - git commit -m "Travis build $TRAVIS_BUILD_NUMBER updating version after tag"
     - git push origin development
+    - git checkout dev2
+    - git checkout master
+    - git merge -s ours dev2
+    - git checkout dev2
+    - git merge master
+    - npm version $NEW_DEV_VERSION --no-git-tag-version
+    - git add .
+    - git commit -m "Travis build $TRAVIS_BUILD_NUMBER updating version after tag"
+    - git push origin dev2
   - stage: deploy-uat
     if: "(NOT type IN (pull_request) AND (branch = master))"
     install:
@@ -115,7 +124,6 @@ jobs:
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
-    - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
@@ -160,7 +168,6 @@ jobs:
     - gcloud config set project $GOOGLE_PROJECT_ID
     - gcloud container clusters get-credentials $ACS_NAME --zone $GOOGLE_ZONE
     - kubectl config set-context $(kubectl config current-context) --namespace=${TARGET_ENV}
-    - docker pull ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
     script:
     - SMART_CONTRACTS_VERSION=$(npm version | grep kauri-smart-contracts | head -1
       | awk '{ print $3 }' | sed 's/[",]//g' | sed 's|["'\'']||g')
@@ -173,4 +180,3 @@ jobs:
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
-
