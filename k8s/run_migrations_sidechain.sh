@@ -26,7 +26,7 @@ else
     docker cp kauri-contract-abis:/project/sidechain/contracts build/
     docker stop kauri-contract-abis
     docker rm kauri-contract-abis
-    if [ -f build/contracts/Group.json ]; then
+    if [ -f build/contracts/GroupConnector.json ]; then
       migrationParameters="-f 3"
     else
       echo Unable to upgrade as Group.json not found, deploying all
