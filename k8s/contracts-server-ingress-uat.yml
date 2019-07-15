@@ -11,10 +11,10 @@ metadata:
 spec:
   tls:
   - hosts:
-    - api.beta.kauri.io
-    secretName: uat-contracts-server-tls
+    - api.kauri.io
+    secretName: uat-contracts-server-tls-new
   rules:
-    - host: api.beta.kauri.io
+    - host: api.kauri.io
       http:
         paths:
           - backend:

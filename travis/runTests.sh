@@ -1,6 +1,8 @@
-output=$(docker exec -it docker_truffle-test_1 truffle test | tee /dev/tty)
-if echo output | grep -q failing; then
-    exit 1
-else
-    exit 0
-fi
+#!/bin/bash
+
+set -e
+
+ganache-cli  /dev/null 1> /dev/null &
+sleep 5 # to make sure ganache-cli is up and running before compiling
+truffle test
+kill -9 $(lsof -t -i:8545)

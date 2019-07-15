@@ -63,3 +63,6 @@ github_deploy_key.pun
 .elasticsearch
 .zookeeper
 .mongodb
+
+# vim swap file
+*.swp
