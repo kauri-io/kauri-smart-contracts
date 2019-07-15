@@ -132,7 +132,7 @@ jobs:
     - bash ./k8s/run_migrations_mainchain.sh
     - bash ./k8s/run_migrations_sidechain.sh
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION
-    - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
+    - bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
     - kubectl delete pods -l app=web3-auth
     - sleep 30
     - kubectl delete pods -l app=monolith
