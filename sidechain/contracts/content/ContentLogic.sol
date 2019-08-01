@@ -2,12 +2,13 @@ pragma solidity ^0.5.6;
 
 import "./ContentI.sol";
 import "../common/UsingExternalStorage.sol";
+import "../group/GroupClient.sol";
 
 /**
  * ContentI defines the contract interface and all methods that can be executed externally (ABI)
  */
 
-contract ContentLogic is ContentI, UsingExternalStorage
+contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
 {
     string constant SPACE_OWNER_KEY = "SPACE_OWNER";
     string constant SPACE_OWNER_TYPE_KEY = "SPACE_OWNER_TYPE";
@@ -35,7 +36,15 @@ contract ContentLogic is ContentI, UsingExternalStorage
     function createContentSpace(
         bytes32 _spaceId
     ) external returns (bool) {
-        return createContentSpace(_spaceId, addressToBytes32(msg.sender), OwnerType.ADDRESS);
+        return doCreateContentSpace(_spaceId, addressToBytes32(msg.sender), OwnerType.ADDRESS);
+    }
+
+    function createContentSpace(
+        bytes32 _spaceId,
+        bytes32 _owner,
+        OwnerType _ownerType
+    ) external returns (bool) {
+        return doCreateContentSpace(_spaceId, _owner, _ownerType);
     }
 
     function transferContentSpaceOwnership(
@@ -73,7 +82,7 @@ contract ContentLogic is ContentI, UsingExternalStorage
     ////////////////////////////////////////////////////
     // Internal Functions
     ////////////////////////////////////////////////////
-    function createContentSpace(
+    function doCreateContentSpace(
         bytes32 _id,
         bytes32 _owner,
         OwnerType _ownerType
@@ -84,7 +93,9 @@ contract ContentLogic is ContentI, UsingExternalStorage
 
         // Validation
         require(_id[0] != 0, "_id cannot be empty");
-        require(_owner != 0, "_owner cannot be 0x");
+        if (_ownerType == OwnerType.ADDRESS) {
+            require(_owner != 0, "_owner cannot be 0x");
+        }
         require(existingOwner == 0, "Space already exists");
 
         // Storage
@@ -139,7 +150,7 @@ contract ContentLogic is ContentI, UsingExternalStorage
         // Validation
         require(_spaceId != 0, "_id cannot be empty");
         require(_hash != 0, "_hash cannot be empty");
-        require(spaceOwner != 0, "Space doesn't exist");
+        require(spaceOwner != 0 || uint(spaceOwnerType) > 0, "Space doesn't exist");
         require((revisionCount == 0 && _parentRevision == 0)
             || (revisionCount > 0 && _parentRevision > 0 && _parentRevision <= revisionCount), "Invalid revisiont");
 
@@ -246,11 +257,11 @@ contract ContentLogic is ContentI, UsingExternalStorage
         OwnerType _spaceOwnerType,
         bytes32 _existingRevisionHash,
         RevisionState _existingRevisionState
-    ) internal {
+    ) internal view {
         require(_spaceId != 0, "_spaceId cannot be empty");
         require(_revisionId != 0, "_revisionId cannot be empty");
         require(_hash != 0, "_hash cannot be empty");
-        require(_spaceOwner != 0, "Space doesn't exist");
+        require(_spaceOwner != 0 || uint(_spaceOwnerType) > 0, "Space doesn't exist");
         require(_existingRevisionHash != 0, "Revision doesn't exist on this space");
         require(_existingRevisionHash == _hash, "Revision hash doesn't match");
         require(_existingRevisionState == RevisionState.PENDING, "Revision isn't pending");
@@ -286,10 +297,14 @@ contract ContentLogic is ContentI, UsingExternalStorage
         bytes32 _contentOwner,
         OwnerType _ownerType,
         address _addressToCheck
-    ) internal returns (bool) {
+    ) internal view returns (bool) {
 
         if (_ownerType == OwnerType.ADDRESS) {
             return bytes32ToAddress(_contentOwner) == _addressToCheck;
+        } 
+
+        if (_ownerType == OwnerType.GROUP) {
+            return isMember(bytes32ToUint(_contentOwner), _addressToCheck);
         } 
 
         return false;
@@ -298,12 +313,16 @@ contract ContentLogic is ContentI, UsingExternalStorage
     ////////////////////////////////////////////////////
     // Conversion Functions
     ////////////////////////////////////////////////////
-    function addressToBytes32(address _value) internal returns (bytes32) {
+    function addressToBytes32(address _value) internal pure returns (bytes32) {
         return bytes32(uint256(_value));
     }
 
-    function bytes32ToAddress(bytes32 _value) internal returns (address) {
+    function bytes32ToAddress(bytes32 _value) internal pure returns (address) {
         return address(uint160(uint256(_value)));
+    }
+
+    function bytes32ToUint(bytes32 _value) internal pure returns (uint) {
+        return uint(_value);
     }
 
     ////////////////////////////////////////////////////

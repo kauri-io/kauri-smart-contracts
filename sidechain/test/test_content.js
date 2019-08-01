@@ -8,6 +8,7 @@ const spaceCreator = 5;
 const Storage = artifacts.require('Storage.sol');
 const AdminController = artifacts.require("OnlyOwnerAdminController.sol");
 const Content = artifacts.require('ContentLogic.sol');
+const Group = artifacts.require("GroupConnector.sol");
 
 const spaceKey = web3.utils.keccak256('keyOne');
 const spaceKey2 = web3.utils.keccak256('keyTwo');
@@ -19,21 +20,40 @@ const ipfsBytes3 = ipfsHash.getBytes32FromIpfsHash('QmcaHpwn3bs9DaeLsrk9ZvVxVcKT
 contract('Content', function(accounts) {
 
   let content;
+  let group;
 
   beforeEach(async () => {
     let storage = await Storage.new();
-    content = await Content.new();
     let adminController = await AdminController.new();
+    content = await Content.new();
+    group = await Group.new();
 
     await storage.setAdminController(adminController.address);
+    await group.setAdminController(adminController.address);
+    await group.setStorageContractAddress(storage.address);
+    await storage.addWritePermission(group.address);
+
+    // add additional role '2' (member/moderator)
+    await group.addRoles([2]);
+
     await content.setAdminController(adminController.address);
     await content.setStorageContractAddress(storage.address);
+    await content.setGroupContractAddress(group.address);
     await storage.addWritePermission(content.address);
   });
 
   it('can create a new content space', async () => {
     
     await content.createContentSpace(spaceKey);
+
+    //No error, happy days!
+  });
+
+  it('can create a new content space owned by a group', async () => {
+
+    let groupId = await createGroup(accounts[0]);
+
+    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
 
     //No error, happy days!
   });
@@ -69,7 +89,7 @@ contract('Content', function(accounts) {
   it('emits a SpaceTransferred event after a content space transfer', async () => {
     
     await content.createContentSpace(spaceKey);
-    console.log(addressToBytes32(accounts[1]));
+
     let transferReceipt = await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[1]), 0);
 
     assert.equal(transferReceipt.logs.length, 1);
@@ -190,6 +210,26 @@ contract('Content', function(accounts) {
     assert.equal(publishedEvent.args[4], accounts[0]);
   });
 
+  it('emits a RevisionPublished event when owning group member pushes revision', async () => {
+    
+    let groupId = await createGroup(accounts[0]);
+    
+    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
+
+    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0);
+
+    assert.equal(pushReceipt.logs.length, 1);
+    
+    let publishedEvent = pushReceipt.logs[0];
+    assert.equal(publishedEvent.event, 'RevisionPublished');
+
+    assert.equal(publishedEvent.args[0], spaceKey);
+    assert.equal(publishedEvent.args[1], 1);
+    assert.equal(publishedEvent.args[2], ipfsBytes1);
+    assert.equal(publishedEvent.args[3], 0);
+    assert.equal(publishedEvent.args[4], accounts[0]);
+  });
+
   it('can push a content revision as non-space owner', async () => {
     
     await content.createContentSpace(spaceKey);
@@ -200,6 +240,27 @@ contract('Content', function(accounts) {
   it('emits a RevisionPending event when non-owner pushes revision', async () => {
     
     await content.createContentSpace(spaceKey);
+
+    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+
+    assert.equal(pushReceipt.logs.length, 1);
+    
+    let publishedEvent = pushReceipt.logs[0];
+    assert.equal(publishedEvent.event, 'RevisionPending');
+
+    assert.equal(publishedEvent.args[0], spaceKey);
+    assert.equal(publishedEvent.args[1], 1);
+    assert.equal(publishedEvent.args[2], ipfsBytes1);
+    assert.equal(publishedEvent.args[3], 0);
+    assert.equal(publishedEvent.args[4], accounts[1]);
+  });
+
+  it('emits a RevisionPending event when non group member pushes revision', async () => {
+    
+    await createGroup(accounts[1]);
+    let groupId = await createGroup(accounts[0]);
+    
+    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1, {from: accounts[1]});
 
     let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
 
@@ -512,6 +573,14 @@ contract('Content', function(accounts) {
     await assertRevert(content.rejectRevision(spaceKey, 1, '0x0'));
   });
 
+  async function createGroup(fromAccount) {
+    let receipt = await group.methods['createGroup(bytes32,bytes32[],uint8[])']
+        (ipfsBytes1, [], [], {from: fromAccount});
+
+    //Get group id from event
+    return parseInt(receipt.logs[0].args[0], 10);
+  }
+
 });
 
 function padToBytes32(n) {
@@ -519,6 +588,10 @@ function padToBytes32(n) {
       n = "0" + n;
   }
   return "0x" + n;
+}
+
+function numToBytes32(num) {
+  return padToBytes32(parseInt(num, 10).toString(16));
 }
 
 function addressToBytes32(address) {

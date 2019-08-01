@@ -22,6 +22,12 @@ interface ContentI
         bytes32 _spaceId
     ) external returns (bool);
 
+    function createContentSpace(
+        bytes32 _spaceId,
+        bytes32 _owner,
+        OwnerType _ownerType
+    ) external returns (bool);
+
     function transferContentSpaceOwnership(
         bytes32 _spaceId,
         bytes32 _newOwner,
