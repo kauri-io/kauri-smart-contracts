@@ -86,6 +86,17 @@ contract('Content', function(accounts) {
     //No error, happy days!
   });
 
+  it('can transfer a content space to a group as the owner', async () => {
+    
+    let groupId = await createGroup(accounts[0]);
+
+    await content.createContentSpace(spaceKey);
+
+    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId), 1);
+
+    //No error, happy days!
+  });
+
   it('emits a SpaceTransferred event after a content space transfer', async () => {
     
     await content.createContentSpace(spaceKey);
@@ -102,6 +113,22 @@ contract('Content', function(accounts) {
     assert.equal(spaceTranferredEvent.args[3], addressToBytes32(accounts[1]));
     assert.equal(spaceTranferredEvent.args[4], 0);
     assert.equal(spaceTranferredEvent.args[5], accounts[0]);
+  });
+
+  it('can publish content from group member after ownership transferred to group', async () => {
+    
+    let groupId = await createGroup(accounts[3]);
+    
+    await content.createContentSpace(spaceKey);
+    
+    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId), 1);
+
+    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[3]});
+    
+    assert.equal(pushReceipt.logs.length, 1);
+    
+    let publishedEvent = pushReceipt.logs[0];
+    assert.equal(publishedEvent.event, 'RevisionPublished');
   });
 
   it('can publish content after ownership transferred to author', async () => {
@@ -148,6 +175,26 @@ contract('Content', function(accounts) {
     await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
 
     await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[5]), 0, {from: accounts[3]});
+
+    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[5]});
+    
+    assert.equal(pushReceipt.logs.length, 1);
+    
+    let publishedEvent = pushReceipt.logs[0];
+    assert.equal(publishedEvent.event, 'RevisionPublished');
+  });
+
+  it('can transfer to another group after being transferred space', async () => {
+    
+    let groupId1 = await createGroup(accounts[3]);
+
+    let groupId2 = await createGroup(accounts[5]);
+    
+    await content.createContentSpace(spaceKey);
+    
+    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId1), 1);
+
+    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId2), 1, {from: accounts[3]});
 
     let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[5]});
     
@@ -328,6 +375,17 @@ contract('Content', function(accounts) {
     await content.approveRevision(spaceKey, 1, ipfsBytes1);
   });
 
+  it('can approve revision as space group member', async () => {
+    
+    let groupId = await createGroup(accounts[2]);
+    
+    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
+
+    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+
+    await content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[2]});
+  });
+
   it('can approve multiple revisions as space owner', async () => {
     
     await content.createContentSpace(spaceKey);
@@ -377,6 +435,17 @@ contract('Content', function(accounts) {
     await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
 
     await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[1]}));
+  });
+
+  it('should not allow approval from non group member', async () => {
+    
+    let groupId = await createGroup(accounts[2]);
+    
+    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
+
+    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+
+    await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[3]}));
   });
 
   it('should not allow approval if space doesnt exist', async () => {

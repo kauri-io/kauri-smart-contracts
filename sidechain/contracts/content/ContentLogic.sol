@@ -90,13 +90,12 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
 
         //Load data
         bytes32 existingOwner = storageContract.getBytes32Value(getSpaceOwnerKey(_id));
+        OwnerType existingOwnerType = OwnerType(storageContract.getUintValue(getSpaceOwnerTypeKey(_id)));
 
         // Validation
         require(_id[0] != 0, "_id cannot be empty");
-        if (_ownerType == OwnerType.ADDRESS) {
-            require(_owner != 0, "_owner cannot be 0x");
-        }
-        require(existingOwner == 0, "Space already exists");
+        validateOwner(_owner, _ownerType);
+        require(!isSpaceOwnerSet(existingOwner, existingOwnerType), "Space already exists");
 
         // Storage
         storageContract.putBytes32Value(getSpaceOwnerKey(_id), _owner);
@@ -121,8 +120,8 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
 
         // Validation
         require(_spaceId != 0, "_id cannot be empty");
-        require(_newOwner != 0, "_newOwner cannot be empty");
-        require(spaceOwner != 0, "Space doesn't exist");
+        validateOwner(_newOwner, _newOwnerType);
+        require(isSpaceOwnerSet(spaceOwner, spaceOwnerType), "Space doesn't exist");
         require(hasContentWriteAccess(spaceOwner, spaceOwnerType, _transferrer));
 
         // Storage
@@ -150,7 +149,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         // Validation
         require(_spaceId != 0, "_id cannot be empty");
         require(_hash != 0, "_hash cannot be empty");
-        require(spaceOwner != 0 || uint(spaceOwnerType) > 0, "Space doesn't exist");
+        require(isSpaceOwnerSet(spaceOwner, spaceOwnerType), "Space doesn't exist");
         require((revisionCount == 0 && _parentRevision == 0)
             || (revisionCount > 0 && _parentRevision > 0 && _parentRevision <= revisionCount), "Invalid revisiont");
 
@@ -261,11 +260,21 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         require(_spaceId != 0, "_spaceId cannot be empty");
         require(_revisionId != 0, "_revisionId cannot be empty");
         require(_hash != 0, "_hash cannot be empty");
-        require(_spaceOwner != 0 || uint(_spaceOwnerType) > 0, "Space doesn't exist");
+        require(isSpaceOwnerSet(_spaceOwner, _spaceOwnerType), "Space doesn't exist");
         require(_existingRevisionHash != 0, "Revision doesn't exist on this space");
         require(_existingRevisionHash == _hash, "Revision hash doesn't match");
         require(_existingRevisionState == RevisionState.PENDING, "Revision isn't pending");
         require(hasContentWriteAccess(_spaceOwner, _spaceOwnerType, _actor), "Only owner can update a revison state");
+    }
+
+    function validateOwner(bytes32 _owner, OwnerType _ownerType) internal view {
+        if (_ownerType == OwnerType.ADDRESS) {
+            require(_owner != 0, "_owner cannot be 0x");
+        }
+    }
+
+    function isSpaceOwnerSet(bytes32 _spaceOwner, OwnerType _spaceOwnerType) internal pure returns (bool) {
+        return _spaceOwner != 0 || uint(_spaceOwnerType) > 0;
     }
 
     function saveRevision(
