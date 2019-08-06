@@ -20,6 +20,14 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
     string constant REVISION_STATE_KEY = "REVISION_STATE";
     string constant REVISION_TIMESTAMP_KEY = "REVISION_TIMESTAMP";
 
+    struct Commit
+    {
+        bytes32 commitHash;
+        uint block;
+    }
+
+    mapping(address => Commit) revisionCommits;
+
     ////////////////////////////////////////////////////
     // Events
     ////////////////////////////////////////////////////
@@ -53,6 +61,12 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         OwnerType _newOwnerType
     ) external returns (bool) {
         return transferContentSpaceOwnership(_spaceId, _newOwner, _newOwnerType, msg.sender);
+    }
+
+    function pushRevisionCommit(
+        bytes32 _commitHash
+    ) external returns (bool) {
+        return doPushRevisionCommit(_commitHash, msg.sender);
     }
 
     function pushRevision(
@@ -134,11 +148,20 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         return true;
     }
 
+    function doPushRevisionCommit(
+        bytes32 _commitHash,
+        address _sender
+    ) internal returns (bool) {
+        require(_commitHash != 0); 
+
+        revisionCommits[_sender] = Commit(_commitHash, block.number);
+    }
+
     function pushRevision(
         bytes32 _spaceId,
         bytes32 _hash,
         uint _parentRevision,
-        address _author
+        address _author    
     ) internal returns (bool) {
 
         //Load data
@@ -152,6 +175,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         require(isSpaceOwnerSet(spaceOwner, spaceOwnerType), "Space doesn't exist");
         require((revisionCount == 0 && _parentRevision == 0)
             || (revisionCount > 0 && _parentRevision > 0 && _parentRevision <= revisionCount), "Invalid revisiont");
+        validateRevisionCommit(_spaceId, _hash, _parentRevision, _author);
 
         // Storage
         uint revisionId = revisionCount + 1;
@@ -271,6 +295,22 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         if (_ownerType == OwnerType.ADDRESS) {
             require(_owner != 0, "_owner cannot be 0x");
         }
+    }
+
+    function validateRevisionCommit(
+        bytes32 _spaceId,
+        bytes32 _hash,
+        uint _parentRevision,
+        address _author) internal {
+
+        require(keccak256(
+            abi.encodePacked(
+                _spaceId, 
+                _hash, 
+                _parentRevision, 
+                _author)) == revisionCommits[_author].commitHash, "Commit hash doesn't match");
+        
+        require(block.number > revisionCommits[_author].block);
     }
 
     function isSpaceOwnerSet(bytes32 _spaceOwner, OwnerType _spaceOwnerType) internal pure returns (bool) {

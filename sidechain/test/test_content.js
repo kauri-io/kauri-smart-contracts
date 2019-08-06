@@ -1,3 +1,5 @@
+const { soliditySha3 } = require("web3-utils");
+
 const fromAscii = require('./helpers/ascii').fromAscii;
 const toAscii = require('./helpers/ascii').toAscii;
 const assertRevert = require('./exceptions.js').catchRevert;
@@ -123,7 +125,7 @@ contract('Content', function(accounts) {
     
     await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId), 1);
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[3]});
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 3);
     
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -137,7 +139,7 @@ contract('Content', function(accounts) {
 
     await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[3]});
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 3);
     
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -151,7 +153,7 @@ contract('Content', function(accounts) {
 
     await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[0]});
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0);
     
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -176,7 +178,7 @@ contract('Content', function(accounts) {
 
     await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[5]), 0, {from: accounts[3]});
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[5]});
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 5);
     
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -196,7 +198,7 @@ contract('Content', function(accounts) {
 
     await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId2), 1, {from: accounts[3]});
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[5]});
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 5);
     
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -236,14 +238,14 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0);
+    await pushRevision(spaceKey, ipfsBytes1, 0);
   });
 
   it('emits a RevisionPublished event when owner pushes revision', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0);
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0);
 
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -263,7 +265,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0);
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0);
 
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -281,14 +283,14 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
   });
 
   it('emits a RevisionPending event when non-owner pushes revision', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -309,7 +311,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey, numToBytes32(groupId), 1, {from: accounts[1]});
 
-    let pushReceipt = await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     assert.equal(pushReceipt.logs.length, 1);
     
@@ -327,50 +329,61 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0);
-    await content.pushRevision(spaceKey, ipfsBytes2, 1);
-    await content.pushRevision(spaceKey, ipfsBytes3, 2);
+    await pushRevision(spaceKey, ipfsBytes1, 0);
+    await pushRevision(spaceKey, ipfsBytes2, 1);
+    await pushRevision(spaceKey, ipfsBytes3, 2);
   });
 
   it('should not allow a revision to be pushed for a non existent space', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await assertRevert(content.pushRevision(spaceKey2, ipfsBytes1, 0));
+    await assertRevert(pushRevision(spaceKey2, ipfsBytes1, 0));
   });
 
   it('should not allow an initial revision to be pushed with a parent', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await assertRevert(content.pushRevision(spaceKey, ipfsBytes1, 1));
+    await assertRevert(pushRevision(spaceKey, ipfsBytes1, 1));
   });
 
   it('should not allow a non-initial revision to be pushed without a parent', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0);
+    await pushRevision(spaceKey, ipfsBytes1, 0);
 
-    await assertRevert(content.pushRevision(spaceKey, ipfsBytes1, 0));
+    await assertRevert(pushRevision(spaceKey, ipfsBytes1, 0));
   });
 
   it('should not allow a revision to be pushed with a non existent parent id', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0);
+    await pushRevision(spaceKey, ipfsBytes1, 0);
 
-    await content.pushRevision(spaceKey, ipfsBytes2, 1);
+    await pushRevision(spaceKey, ipfsBytes2, 1);
 
-    await assertRevert(content.pushRevision(spaceKey, ipfsBytes3, 3));
+    await assertRevert(pushRevision(spaceKey, ipfsBytes3, 3));
+  });
+
+  it('should not allow a revision to be pushed with no matching commit hash', async () => {
+    
+    await content.createContentSpace(spaceKey);
+
+    let commitHash = soliditySha3(spaceKey, ipfsBytes2, 0, accounts[0]);
+    
+    await content.pushRevisionCommit(commitHash, {from: accounts[0]});
+    
+    await assertRevert(content.pushRevision(spaceKey, ipfsBytes1, 0));
   });
 
   it('can approve revision as space owner', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await content.approveRevision(spaceKey, 1, ipfsBytes1);
   });
@@ -381,7 +394,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[2]});
   });
@@ -390,13 +403,13 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
     await content.approveRevision(spaceKey, 1, ipfsBytes1);
 
-    await content.pushRevision(spaceKey, ipfsBytes2, 1, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes2, 1, 1);
     await content.approveRevision(spaceKey, 2, ipfsBytes2);
 
-    await content.pushRevision(spaceKey, ipfsBytes3, 2, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes3, 2, 1);
     await content.approveRevision(spaceKey, 3, ipfsBytes3);
   });
 
@@ -404,7 +417,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     let approveReceipt = await content.approveRevision(spaceKey, 1, ipfsBytes1);
 
@@ -432,7 +445,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[1]}));
   });
@@ -443,7 +456,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[3]}));
   });
@@ -452,7 +465,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision(spaceKey2, 1, ipfsBytes1));
   });
@@ -461,7 +474,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision(spaceKey, 2, ipfsBytes1));
   });
@@ -470,7 +483,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes2));
   });
@@ -479,7 +492,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await content.approveRevision(spaceKey, 1, ipfsBytes1)
 
@@ -490,7 +503,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision('0x0', 1, ipfsBytes1));
   });
@@ -499,7 +512,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision(spaceKey, 0, ipfsBytes1));
   });
@@ -508,7 +521,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.approveRevision(spaceKey, 1, '0x0'));
   });
@@ -517,7 +530,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await content.rejectRevision(spaceKey, 1, ipfsBytes1);
   });
@@ -526,13 +539,13 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
     await content.rejectRevision(spaceKey, 1, ipfsBytes1);
 
-    await content.pushRevision(spaceKey, ipfsBytes2, 1, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes2, 1, 1);
     await content.rejectRevision(spaceKey, 2, ipfsBytes2);
 
-    await content.pushRevision(spaceKey, ipfsBytes3, 2, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes3, 2, 1);
     await content.rejectRevision(spaceKey, 3, ipfsBytes3);
   });
 
@@ -540,7 +553,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     let rejectedReceipt = await content.rejectRevision(spaceKey, 1, ipfsBytes1);
 
@@ -561,7 +574,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.rejectRevision(spaceKey, 1, ipfsBytes1, {from: accounts[1]}));
   });
@@ -570,7 +583,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.rejectRevision(spaceKey2, 1, ipfsBytes1));
   });
@@ -579,7 +592,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.rejectRevision(spaceKey, 2, ipfsBytes1));
   });
@@ -588,7 +601,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.rejectRevision(spaceKey, 1, ipfsBytes2));
   });
@@ -597,7 +610,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await content.approveRevision(spaceKey, 1, ipfsBytes1)
 
@@ -608,7 +621,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await content.rejectRevision(spaceKey, 1, ipfsBytes1)
 
@@ -619,7 +632,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.rejectRevision('0x0', 1, ipfsBytes1));
   });
@@ -628,7 +641,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.rejectRevision(spaceKey, 0, ipfsBytes1));
   });
@@ -637,7 +650,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.pushRevision(spaceKey, ipfsBytes1, 0, {from: accounts[1]});
+    await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
     await assertRevert(content.rejectRevision(spaceKey, 1, '0x0'));
   });
@@ -648,6 +661,16 @@ contract('Content', function(accounts) {
 
     //Get group id from event
     return parseInt(receipt.logs[0].args[0], 10);
+  }
+
+  async function pushRevision(spaceKey, contentHash, parentRevision, fromAccountNumber) {
+
+    if (!fromAccountNumber) { fromAccountNumber = 0; }
+    let commitHash = soliditySha3(spaceKey, contentHash, parentRevision, accounts[fromAccountNumber]);
+
+    await content.pushRevisionCommit(commitHash, {from: accounts[fromAccountNumber]});
+
+    return await content.pushRevision(spaceKey, contentHash, parentRevision, {from: accounts[fromAccountNumber]});
   }
 
 });
