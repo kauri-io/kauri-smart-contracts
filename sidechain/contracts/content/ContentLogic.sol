@@ -41,27 +41,6 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
     ////////////////////////////////////////////////////
     // Public Functions
     ////////////////////////////////////////////////////
-    function createContentSpace(
-        bytes32 _spaceId
-    ) external returns (bool) {
-        return doCreateContentSpace(_spaceId, addressToBytes32(msg.sender), OwnerType.ADDRESS);
-    }
-
-    function createContentSpace(
-        bytes32 _spaceId,
-        bytes32 _owner,
-        OwnerType _ownerType
-    ) external returns (bool) {
-        return doCreateContentSpace(_spaceId, _owner, _ownerType);
-    }
-
-    function transferContentSpaceOwnership(
-        bytes32 _spaceId,
-        bytes32 _newOwner,
-        OwnerType _newOwnerType
-    ) external returns (bool) {
-        return transferContentSpaceOwnership(_spaceId, _newOwner, _newOwnerType, msg.sender);
-    }
 
     function pushRevisionCommit(
         bytes32 _commitHash
@@ -121,7 +100,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         return true;
     }
 
-    function transferContentSpaceOwnership(
+    function doTransferContentSpaceOwnership(
         bytes32 _spaceId, 
         bytes32 _newOwner, 
         OwnerType _newOwnerType, 
@@ -291,7 +270,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         require(hasContentWriteAccess(_spaceOwner, _spaceOwnerType, _actor), "Only owner can update a revison state");
     }
 
-    function validateOwner(bytes32 _owner, OwnerType _ownerType) internal view {
+    function validateOwner(bytes32 _owner, OwnerType _ownerType) internal pure {
         if (_ownerType == OwnerType.ADDRESS) {
             require(_owner != 0, "_owner cannot be 0x");
         }
@@ -301,7 +280,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         bytes32 _spaceId,
         bytes32 _hash,
         uint _parentRevision,
-        address _author) internal {
+        address _author) internal view {
 
         require(keccak256(
             abi.encodePacked(

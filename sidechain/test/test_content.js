@@ -9,7 +9,7 @@ const spaceCreator = 5;
 
 const Storage = artifacts.require('Storage.sol');
 const AdminController = artifacts.require("OnlyOwnerAdminController.sol");
-const Content = artifacts.require('ContentLogic.sol');
+const Content = artifacts.require('ContentConnector.sol');
 const Group = artifacts.require("GroupConnector.sol");
 
 const spaceKey = web3.utils.keccak256('keyOne');
@@ -55,7 +55,7 @@ contract('Content', function(accounts) {
 
     let groupId = await createGroup(accounts[0]);
 
-    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
+    await createContentSpace(spaceKey, numToBytes32(groupId), 1, accounts[0]);
 
     //No error, happy days!
   });
@@ -83,7 +83,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[1]), 0);
+    await transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[1]), 0);
 
     //No error, happy days!
   });
@@ -94,7 +94,7 @@ contract('Content', function(accounts) {
 
     await content.createContentSpace(spaceKey);
 
-    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId), 1);
+    await transferContentSpaceOwnership(spaceKey, numToBytes32(groupId), 1);
 
     //No error, happy days!
   });
@@ -103,7 +103,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    let transferReceipt = await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[1]), 0);
+    let transferReceipt = await transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[1]), 0);
 
     assert.equal(transferReceipt.logs.length, 1);
 
@@ -123,7 +123,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
     
-    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId), 1);
+    await transferContentSpaceOwnership(spaceKey, numToBytes32(groupId), 1);
 
     let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 3);
     
@@ -137,7 +137,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
+    await transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
 
     let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 3);
     
@@ -151,7 +151,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
+    await transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
 
     let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0);
     
@@ -165,7 +165,7 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
+    await transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
 
     await assertRevert(content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0));
   });
@@ -174,9 +174,9 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
+    await transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[3]), 0);
 
-    await content.transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[5]), 0, {from: accounts[3]});
+    await transferContentSpaceOwnership(spaceKey, addressToBytes32(accounts[5]), 0, accounts[3]);
 
     let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 5);
     
@@ -194,9 +194,9 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
     
-    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId1), 1);
+    await transferContentSpaceOwnership(spaceKey, numToBytes32(groupId1), 1);
 
-    await content.transferContentSpaceOwnership(spaceKey, numToBytes32(groupId2), 1, {from: accounts[3]});
+    await transferContentSpaceOwnership(spaceKey, numToBytes32(groupId2), 1, accounts[3]);
 
     let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 5);
     
@@ -210,28 +210,28 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await assertRevert(content.transferContentSpaceOwnership('0x0', addressToBytes32(accounts[1]), 0));
+    await assertRevert(transferContentSpaceOwnership('0x0', addressToBytes32(accounts[1]), 0));
   });
 
   it('should revert if transferring to 0 account', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await assertRevert(content.transferContentSpaceOwnership(spaceKey, "0x0", 0));
+    await assertRevert(transferContentSpaceOwnership(spaceKey, "0x0", 0));
   });
 
   it('should revert if transferring non existent space', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await assertRevert(content.transferContentSpaceOwnership(spaceKey2, addressToBytes32(accounts[1]), 0));
+    await assertRevert(transferContentSpaceOwnership(spaceKey2, addressToBytes32(accounts[1]), 0));
   });
 
   it('should revert if transferring from non owner account', async () => {
     
     await content.createContentSpace(spaceKey);
 
-    await assertRevert(content.transferContentSpaceOwnership(spaceKey2, addressToBytes32(accounts[1]), 0, {from: accounts[1]}));
+    await assertRevert(transferContentSpaceOwnership(spaceKey2, addressToBytes32(accounts[1]), 0, accounts[1]));
   });
 
   it('can push a content revision as space owner', async () => {
@@ -263,7 +263,7 @@ contract('Content', function(accounts) {
     
     let groupId = await createGroup(accounts[0]);
     
-    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
+    await createContentSpace(spaceKey, numToBytes32(groupId), 1);
 
     let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0);
 
@@ -309,7 +309,7 @@ contract('Content', function(accounts) {
     await createGroup(accounts[1]);
     let groupId = await createGroup(accounts[0]);
     
-    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1, {from: accounts[1]});
+    await createContentSpace(spaceKey, numToBytes32(groupId), 1, accounts[1]);
 
     let pushReceipt = await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
@@ -392,7 +392,7 @@ contract('Content', function(accounts) {
     
     let groupId = await createGroup(accounts[2]);
     
-    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
+    await createContentSpace(spaceKey, numToBytes32(groupId), 1);
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
@@ -454,7 +454,7 @@ contract('Content', function(accounts) {
     
     let groupId = await createGroup(accounts[2]);
     
-    await content.createContentSpace(spaceKey, numToBytes32(groupId), 1);
+    await createContentSpace(spaceKey, numToBytes32(groupId), 1);
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
@@ -661,6 +661,24 @@ contract('Content', function(accounts) {
 
     //Get group id from event
     return parseInt(receipt.logs[0].args[0], 10);
+  }
+
+  async function createContentSpace(spaceId, owner, ownerType, fromAccount) {
+
+    if (!fromAccount) { fromAccount = accounts[0];}
+    let receipt = await content.methods['createContentSpace(bytes32,bytes32,uint8)']
+        (spaceId, owner, ownerType, {from: fromAccount});
+
+    return receipt;
+  }
+
+  async function transferContentSpaceOwnership(spaceId, newOwner, newOwnerType, fromAccount) {
+    
+        if (!fromAccount) { fromAccount = accounts[0];}
+        let receipt = await content.methods['transferContentSpaceOwnership(bytes32,bytes32,uint8)']
+            (spaceId, newOwner, newOwnerType, {from: fromAccount});
+    
+        return receipt;
   }
 
   async function pushRevision(spaceKey, contentHash, parentRevision, fromAccountNumber) {
