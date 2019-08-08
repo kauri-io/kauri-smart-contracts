@@ -373,10 +373,10 @@ contract('Content', function(accounts) {
     await content.createContentSpace(spaceKey);
 
     let commitHash = soliditySha3(spaceKey, ipfsBytes2, 0, accounts[0]);
-    
-    await content.pushRevisionCommit(commitHash, {from: accounts[0]});
-    
-    await assertRevert(content.pushRevision(spaceKey, ipfsBytes1, 0));
+
+    await content.methods['pushRevisionCommit(bytes32)'](commitHash, {from: accounts[0]});
+        
+    await assertRevert(content.methods['pushRevision(bytes32,bytes32,uint256)'](spaceKey, ipfsBytes1, 0));
   });
 
   it('can approve revision as space owner', async () => {
@@ -385,7 +385,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await content.approveRevision(spaceKey, 1, ipfsBytes1);
+    await approveRevision(spaceKey, 1, ipfsBytes1);
   });
 
   it('can approve revision as space group member', async () => {
@@ -396,7 +396,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[2]});
+    await approveRevision(spaceKey, 1, ipfsBytes1, accounts[2]);
   });
 
   it('can approve multiple revisions as space owner', async () => {
@@ -404,13 +404,13 @@ contract('Content', function(accounts) {
     await content.createContentSpace(spaceKey);
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
-    await content.approveRevision(spaceKey, 1, ipfsBytes1);
+    await approveRevision(spaceKey, 1, ipfsBytes1);
 
     await pushRevision(spaceKey, ipfsBytes2, 1, 1);
-    await content.approveRevision(spaceKey, 2, ipfsBytes2);
+    await approveRevision(spaceKey, 2, ipfsBytes2);
 
     await pushRevision(spaceKey, ipfsBytes3, 2, 1);
-    await content.approveRevision(spaceKey, 3, ipfsBytes3);
+    await approveRevision(spaceKey, 3, ipfsBytes3);
   });
 
   it('emits a RevisionApproved and RevisionPublished event on approval', async () => {
@@ -419,7 +419,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    let approveReceipt = await content.approveRevision(spaceKey, 1, ipfsBytes1);
+    let approveReceipt = await approveRevision(spaceKey, 1, ipfsBytes1);
 
     let approvedEvent = approveReceipt.logs[0];
     assert.equal(approvedEvent.event, 'RevisionApproved');
@@ -447,7 +447,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[1]}));
+    await assertRevert(approveRevision(spaceKey, 1, ipfsBytes1, accounts[1]));
   });
 
   it('should not allow approval from non group member', async () => {
@@ -458,7 +458,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes1, {from: accounts[3]}));
+    await assertRevert(approveRevision(spaceKey, 1, ipfsBytes1, accounts[3]));
   });
 
   it('should not allow approval if space doesnt exist', async () => {
@@ -467,7 +467,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.approveRevision(spaceKey2, 1, ipfsBytes1));
+    await assertRevert(approveRevision(spaceKey2, 1, ipfsBytes1));
   });
 
   it('should not allow approval for invalid revision id', async () => {
@@ -494,9 +494,9 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await content.approveRevision(spaceKey, 1, ipfsBytes1)
+    await approveRevision(spaceKey, 1, ipfsBytes1)
 
-    await assertRevert(content.approveRevision(spaceKey, 1, ipfsBytes1));
+    await assertRevert(approveRevision(spaceKey, 1, ipfsBytes1));
   });
 
   it('should not allow an empty space id when approving', async () => {
@@ -523,7 +523,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.approveRevision(spaceKey, 1, '0x0'));
+    await assertRevert(approveRevision(spaceKey, 1, '0x0'));
   });
 
   it('can reject revision as space owner', async () => {
@@ -532,7 +532,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await content.rejectRevision(spaceKey, 1, ipfsBytes1);
+    await rejectRevision(spaceKey, 1, ipfsBytes1);
   });
 
   it('can reject multiple revisions as space owner', async () => {
@@ -540,13 +540,13 @@ contract('Content', function(accounts) {
     await content.createContentSpace(spaceKey);
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
-    await content.rejectRevision(spaceKey, 1, ipfsBytes1);
+    await rejectRevision(spaceKey, 1, ipfsBytes1);
 
     await pushRevision(spaceKey, ipfsBytes2, 1, 1);
-    await content.rejectRevision(spaceKey, 2, ipfsBytes2);
+    await rejectRevision(spaceKey, 2, ipfsBytes2);
 
     await pushRevision(spaceKey, ipfsBytes3, 2, 1);
-    await content.rejectRevision(spaceKey, 3, ipfsBytes3);
+    await rejectRevision(spaceKey, 3, ipfsBytes3);
   });
 
   it('emits a RevisionRejected event on rejection', async () => {
@@ -576,7 +576,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.rejectRevision(spaceKey, 1, ipfsBytes1, {from: accounts[1]}));
+    await assertRevert(rejectRevision(spaceKey, 1, ipfsBytes1, accounts[1]));
   });
 
   it('should not allow rejection if space doesnt exist', async () => {
@@ -603,7 +603,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.rejectRevision(spaceKey, 1, ipfsBytes2));
+    await assertRevert(rejectRevision(spaceKey, 1, ipfsBytes2));
   });
 
   it('should not allow rejection if state is PUBLISHED', async () => {
@@ -612,9 +612,9 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await content.approveRevision(spaceKey, 1, ipfsBytes1)
+    await approveRevision(spaceKey, 1, ipfsBytes1)
 
-    await assertRevert(content.rejectRevision(spaceKey, 1, ipfsBytes1));
+    await assertRevert(rejectRevision(spaceKey, 1, ipfsBytes1));
   });
 
   it('should not allow rejection if state is REJECTED', async () => {
@@ -643,7 +643,7 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.rejectRevision(spaceKey, 0, ipfsBytes1));
+    await assertRevert(rejectRevision(spaceKey, 0, ipfsBytes1));
   });
 
   it('should not allow an empty hash when rejecting', async () => {
@@ -652,7 +652,40 @@ contract('Content', function(accounts) {
 
     await pushRevision(spaceKey, ipfsBytes1, 0, 1);
 
-    await assertRevert(content.rejectRevision(spaceKey, 1, '0x0'));
+    await assertRevert(rejectRevision(spaceKey, 1, '0x0'));
+  });
+
+  //META TRANSACTION TESTS
+  it('can create a content space and push revision with meta transactions', async () => {
+    
+    await createContentSpaceMeta(spaceKey);
+
+    await pushRevisionMeta(spaceKey, ipfsBytes1, 0);
+  });
+
+  it('can transfer a content space with meta transactions', async () => {
+    
+    await createContentSpaceMeta(spaceKey);
+
+    await transferContentSpaceOwnershipMeta(spaceKey, accounts[5], 0);
+  });
+
+  it('can approve a revision with meta transactions', async () => {
+    
+    await createContentSpaceMeta(spaceKey);
+
+    await pushRevisionMeta(spaceKey, ipfsBytes1, 0, accounts[1]);
+
+    await approveRevisionMeta(spaceKey, 1, ipfsBytes1);
+  });
+
+  it('can reject a revision with meta transactions', async () => {
+    
+    await createContentSpaceMeta(spaceKey);
+
+    await pushRevisionMeta(spaceKey, ipfsBytes1, 0, accounts[1]);
+
+    await rejectRevisionMeta(spaceKey, 1, ipfsBytes1);
   });
 
   async function createGroup(fromAccount) {
@@ -672,13 +705,39 @@ contract('Content', function(accounts) {
     return receipt;
   }
 
+  async function createContentSpaceMeta(spaceId, owner, ownerType, account) {
+    
+    if (!account) { account = accounts[0];}
+    let nonce = await getNonce(account);
+    let msgHash = await content.prepareCreateContentSpace.call(spaceId, nonce);
+
+    let sig = await web3.eth.sign(msgHash, web3.utils.toChecksumAddress(account));
+    let receipt = await content.methods['createContentSpace(bytes32,bytes,uint256)']
+        (spaceId, sig, nonce, {from: accounts[9]});
+
+    return receipt;
+  }
+
   async function transferContentSpaceOwnership(spaceId, newOwner, newOwnerType, fromAccount) {
     
-        if (!fromAccount) { fromAccount = accounts[0];}
-        let receipt = await content.methods['transferContentSpaceOwnership(bytes32,bytes32,uint8)']
-            (spaceId, newOwner, newOwnerType, {from: fromAccount});
+    if (!fromAccount) { fromAccount = accounts[0];}
+    let receipt = await content.methods['transferContentSpaceOwnership(bytes32,bytes32,uint8)']
+        (spaceId, newOwner, newOwnerType, {from: fromAccount});
+
+    return receipt;
+  }
+
+  async function transferContentSpaceOwnershipMeta(spaceId, newOwner, newOwnerType, account) {
     
-        return receipt;
+    if (!account) { account = accounts[0];}
+
+    let nonce = await getNonce(account);
+    let msgHash = await content.prepareTransferContentSpaceOwnership.call(spaceId, newOwner, newOwnerType, nonce);
+    let sig = await web3.eth.sign(msgHash, web3.utils.toChecksumAddress(account));
+    let receipt = await content.methods['transferContentSpaceOwnership(bytes32,bytes32,uint8,bytes,uint256)']
+        (spaceId, newOwner, newOwnerType, sig, nonce, {from: accounts[9]});
+
+    return receipt;
   }
 
   async function pushRevision(spaceKey, contentHash, parentRevision, fromAccountNumber) {
@@ -686,9 +745,71 @@ contract('Content', function(accounts) {
     if (!fromAccountNumber) { fromAccountNumber = 0; }
     let commitHash = soliditySha3(spaceKey, contentHash, parentRevision, accounts[fromAccountNumber]);
 
-    await content.pushRevisionCommit(commitHash, {from: accounts[fromAccountNumber]});
+    await content.methods['pushRevisionCommit(bytes32)'](commitHash, {from: accounts[fromAccountNumber]});
 
-    return await content.pushRevision(spaceKey, contentHash, parentRevision, {from: accounts[fromAccountNumber]});
+    return await content.methods['pushRevision(bytes32,bytes32,uint256)']
+        (spaceKey, contentHash, parentRevision, {from: accounts[fromAccountNumber]});
+  }
+
+  async function pushRevisionMeta(spaceKey, contentHash, parentRevision, account) {
+    
+    if (!account) { account = accounts[0]; }
+    let commitHash = soliditySha3(spaceKey, contentHash, parentRevision, account);
+
+    let nonce = await getNonce(account);
+    let commitMsgHash = await content.preparePushRevisionCommit.call(commitHash, nonce);
+    let commitSig = await web3.eth.sign(commitMsgHash, web3.utils.toChecksumAddress(account));
+    await content.methods['pushRevisionCommit(bytes32,bytes,uint256)'](commitHash, commitSig, nonce, {from: accounts[9]});
+
+    nonce = await getNonce(account);
+    let pushMsgHash = await content.preparePushRevision.call(spaceKey, contentHash, parentRevision, nonce);
+    let pushSig = await web3.eth.sign(pushMsgHash, web3.utils.toChecksumAddress(account));
+    return await content.methods['pushRevision(bytes32,bytes32,uint256,bytes,uint256)']
+        (spaceKey, contentHash, parentRevision, pushSig, nonce, {from: accounts[9]});
+  }
+
+  async function approveRevision(spaceKey, revisionId, contentHash, fromAccount) {
+    
+    if (!fromAccount) { fromAccount = accounts[0] }
+
+    return await content.methods['approveRevision(bytes32,uint256,bytes32)']
+          (spaceKey, revisionId, contentHash, {from: fromAccount});
+  }
+
+  async function approveRevisionMeta(spaceKey, revisionId, contentHash, account) {
+    
+    if (!account) { account = accounts[0] }
+
+    let nonce = await getNonce(account);
+    let msgHash = await content.prepareApproveRevision.call(spaceKey, revisionId, contentHash, nonce);
+    let sig = await web3.eth.sign(msgHash, web3.utils.toChecksumAddress(account));
+
+    return await content.methods['approveRevision(bytes32,uint256,bytes32,bytes,uint256)']
+          (spaceKey, revisionId, contentHash, sig, nonce, {from: accounts[9]});
+  }
+
+  async function rejectRevision(spaceKey, revisionId, contentHash, fromAccount) {
+    
+    if (!fromAccount) { fromAccount = accounts[0] }
+
+    return await content.methods['rejectRevision(bytes32,uint256,bytes32)']
+          (spaceKey, revisionId, contentHash, {from: fromAccount});
+  }
+
+  async function rejectRevisionMeta(spaceKey, revisionId, contentHash, account) {
+    
+    if (!account) { account = accounts[0] }
+    
+    let nonce = await getNonce(account);
+    let msgHash = await content.prepareRejectRevision.call(spaceKey, revisionId, contentHash, nonce);
+    let sig = await web3.eth.sign(msgHash, web3.utils.toChecksumAddress(account));
+
+    return await content.methods['rejectRevision(bytes32,uint256,bytes32,bytes,uint256)']
+          (spaceKey, revisionId, contentHash, sig, nonce, {from: accounts[9]});
+  }
+
+  async function getNonce(addr) {
+    return await content.getNonce.call(addr);
   }
 
 });

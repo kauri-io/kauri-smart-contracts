@@ -184,6 +184,346 @@ contract ContentConnector is ContentI, ContentLogic
     }
 
     //////////////////////////////////////////////////
+    // PUSH REVISION COMMIT
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] preparePushRevisionCommit
+     *  @dev view function to prepare meta-tx for push revision commit
+     *  @param _commitHash the commit hash
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bytes32 hash to be signed by tx sender
+     */
+
+    function preparePushRevisionCommit(
+        bytes32 _commitHash,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "pushRevisionCommit",
+                _commitHash,
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] pushRevisionCommit
+     *  @dev transaction function for storing a push revision commit with relayer acting as middle-man
+     *  @dev tx sender is recovered from signature of preparePushRevisionCommit result
+     *  @param _commitHash the commit hash
+     *  @param _signature signature of signed msg hash from preparePushRevisionCommit
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bool upon successful tx
+     */
+
+    function pushRevisionCommit(
+        bytes32 _commitHash,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.preparePushRevisionCommit(
+                _commitHash,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        return doPushRevisionCommit(_commitHash, signer);
+    }
+
+    /**
+     *  [DIRECT-TX] pushRevisionCommit
+     *  @dev transaction function for storing a push revision commit without middle-man
+     *  @param _commitHash the commit hhash
+     *  @return bool upon successful tx
+     */
+
+    function pushRevisionCommit(
+        bytes32 _commitHash
+    ) external returns (bool) {
+        return doPushRevisionCommit(_commitHash, msg.sender);
+    }
+
+    //////////////////////////////////////////////////
+    // PUSH REVISION
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] preparePushRevision
+     *  @dev view function to prepare meta-tx for pushing a revision
+     *  @param _spaceId the space that the revision is to be pushed to
+     *  @param _contentHash the ipfs hash of the revision content
+     *  @param _parentRevision the parent of this new revision
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bytes32 hash to be signed by tx sender
+     */
+
+    function preparePushRevision(
+        bytes32 _spaceId,
+        bytes32 _contentHash,
+        uint _parentRevision,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "pushRevision",
+                _spaceId,
+                _contentHash,
+                _parentRevision,
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] pushRevision
+     *  @dev transaction function for pushing a new revision with relayer acting as middle-man
+     *  @dev tx sender is recovered from signature of preparePushRevision result
+     *  @param _spaceId the space that the revision is to be pushed to
+     *  @param _contentHash the ipfs hash of the revision content
+     *  @param _parentRevision the parent of this new revision
+     *  @param _signature signature of signed msg hash from preparePushRevisionCommit
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bool upon successful tx
+     */
+
+    function pushRevision(
+        bytes32 _spaceId,
+        bytes32 _contentHash,
+        uint _parentRevision,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.preparePushRevision(
+                _spaceId,
+                _contentHash,
+                _parentRevision,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        return doPushRevision(_spaceId, _contentHash, _parentRevision, signer);
+    }
+
+    /**
+     *  [DIRECT-TX] pushRevision
+     *  @dev transaction function for pushing a revision without middle-man
+    *  @param _spaceId the space that the revision is to be pushed to
+     *  @param _contentHash the ipfs hash of the revision content
+     *  @param _parentRevision the parent of this new revision
+     *  @return bool upon successful tx
+     */
+
+    function pushRevision(
+        bytes32 _spaceId,
+        bytes32 _contentHash,
+        uint _parentRevision
+    ) external returns (bool) {
+        return doPushRevision(_spaceId, _contentHash, _parentRevision, msg.sender);
+    }
+
+    //////////////////////////////////////////////////
+    // APPROVE REVISION
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] prepareApproveRevision
+     *  @dev view function to prepare meta-tx for approving a revision
+     *  @param _spaceId the space of the revision
+     *  @param _revisionId the revision id
+     *  @param _contentHash the ipfs content hash of the revision that is being approved
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bytes32 hash to be signed by tx sender
+     */
+
+    function prepareApproveRevision(
+        bytes32 _spaceId,
+        uint _revisionId,
+        bytes32 _contentHash,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "approveRevision",
+                _spaceId,
+                _revisionId,
+                _contentHash,
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] approveRevision
+     *  @dev transaction function for approving a new revision with relayer acting as middle-man
+     *  @dev tx sender is recovered from signature of prepareApproveRevision result
+     *  @param _spaceId the space of the revision
+     *  @param _revisionId the revision id
+     *  @param _contentHash the ipfs content hash of the revision that is being approved
+     *  @param _signature signature of signed msg hash from prepareApproveRevision
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bool upon successful tx
+     */
+
+    function approveRevision(
+        bytes32 _spaceId,
+        uint _revisionId,
+        bytes32 _contentHash,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.prepareApproveRevision(
+                _spaceId,
+                _revisionId,
+                _contentHash,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        return doApproveRevision(_spaceId, _revisionId, _contentHash, signer);
+    }
+
+    /**
+     *  [DIRECT-TX] approveRevision
+     *  @dev transaction function for approving a revision without middle-man
+     *  @param _spaceId the space of the revision
+     *  @param _revisionId the revision id
+     *  @param _contentHash the ipfs content hash of the revision that is being approved
+     *  @return bool upon successful tx
+     */
+
+    function approveRevision(
+        bytes32 _spaceId,
+        uint _revisionId,
+        bytes32 _contentHash
+    ) external returns (bool) {
+        return doApproveRevision(_spaceId, _revisionId, _contentHash, msg.sender);
+    }
+
+    //////////////////////////////////////////////////
+    // REJECT REVISION
+    //////////////////////////////////////////////////
+
+    /**
+     *  [META-TX PREPARE] rejectRevision
+     *  @dev view function to prepare meta-tx for rejecting a revision
+     *  @param _spaceId the space of the revision
+     *  @param _revisionId the revision id
+     *  @param _contentHash the ipfs content hash of the revision that is being rejected
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bytes32 hash to be signed by tx sender
+     */
+
+    function prepareRejectRevision(
+        bytes32 _spaceId,
+        uint _revisionId,
+        bytes32 _contentHash,
+        uint256 _nonce
+    )
+        external
+        view
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                address(this),
+                "rejectRevision",
+                _spaceId,
+                _revisionId,
+                _contentHash,
+                _nonce
+            )
+        );
+    }
+
+    /**
+     *  [META-TX] rejectRevision
+     *  @dev transaction function for rejecting a new revision with relayer acting as middle-man
+     *  @dev tx sender is recovered from signature of prepareRejectRevision result
+     *  @param _spaceId the space of the revision
+     *  @param _revisionId the revision id
+     *  @param _contentHash the ipfs content hash of the revision that is being rejected
+     *  @param _signature signature of signed msg hash from prepareRejectRevision
+     *  @param _nonce incrementable nonce used to prevent replay attacks
+     *  @return bool upon successful tx
+     */
+
+    function rejectRevision(
+        bytes32 _spaceId,
+        uint _revisionId,
+        bytes32 _contentHash,
+        bytes calldata _signature,
+        uint256 _nonce
+    )
+        external
+        returns (bool)
+    {
+        address signer = getSigner(
+            this.prepareRejectRevision(
+                _spaceId,
+                _revisionId,
+                _contentHash,
+                _nonce
+            ),
+            _signature,
+            _nonce
+        );
+
+        return doRejectRevision(_spaceId, _revisionId, _contentHash, signer);
+    }
+
+    /**
+     *  [DIRECT-TX] rejectRevision
+     *  @dev transaction function for rejecting a revision without middle-man
+     *  @param _spaceId the space of the revision
+     *  @param _revisionId the revision id
+     *  @param _contentHash the ipfs content hash of the revision that is being rejected
+     *  @return bool upon successful tx
+     */
+
+    function rejectRevision(
+        bytes32 _spaceId,
+        uint _revisionId,
+        bytes32 _contentHash
+    ) external returns (bool) {
+        return doRejectRevision(_spaceId, _revisionId, _contentHash, msg.sender);
+    }
+
+    //////////////////////////////////////////////////
     // GET_NONCE
     //////////////////////////////////////////////////
 

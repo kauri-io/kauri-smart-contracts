@@ -38,39 +38,6 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
     event RevisionApproved(bytes32 _spaceId, uint _revisionId, bytes32 _hash, uint _parentRevision, address _author, address _approver);
     event RevisionRejected(bytes32 _spaceId, uint _revisionId, bytes32 _hash, uint _parentRevision, address _author, address _rejector);
 
-    ////////////////////////////////////////////////////
-    // Public Functions
-    ////////////////////////////////////////////////////
-
-    function pushRevisionCommit(
-        bytes32 _commitHash
-    ) external returns (bool) {
-        return doPushRevisionCommit(_commitHash, msg.sender);
-    }
-
-    function pushRevision(
-        bytes32 _spaceId,
-        bytes32 _hash,
-        uint _parentRevision
-    ) external returns (bool) {
-        return pushRevision(_spaceId, _hash, _parentRevision, msg.sender);
-    }
-
-    function approveRevision(
-        bytes32 _spaceId,
-        uint _revisionId, 
-        bytes32 _hash
-    ) external returns (bool) {
-        return approveRevision(_spaceId, _revisionId, _hash, msg.sender);
-    }
-
-    function rejectRevision(
-        bytes32 _spaceId, 
-        uint _revisionId,
-        bytes32 _hash
-    ) external returns (bool) {
-        return rejectRevision(_spaceId, _revisionId, _hash, msg.sender);
-    }
 
     ////////////////////////////////////////////////////
     // Internal Functions
@@ -136,7 +103,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         revisionCommits[_sender] = Commit(_commitHash, block.number);
     }
 
-    function pushRevision(
+    function doPushRevision(
         bytes32 _spaceId,
         bytes32 _hash,
         uint _parentRevision,
@@ -176,7 +143,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         return true;
     }
 
-    function approveRevision(
+    function doApproveRevision(
         bytes32 _spaceId, 
         uint _revisionId, 
         bytes32 _hash, 
@@ -214,7 +181,7 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         return true;
     }
 
-    function rejectRevision(
+    function doRejectRevision(
         bytes32 _spaceId, 
         uint _revisionId, 
         bytes32 _hash, 
