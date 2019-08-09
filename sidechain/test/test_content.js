@@ -19,6 +19,8 @@ const ipfsBytes1 = ipfsHash.getBytes32FromIpfsHash('QmaozNR7DZHQK1ZcU9p7QdrshMvX
 const ipfsBytes2 = ipfsHash.getBytes32FromIpfsHash('QmWATWQ7fVPP2EFGu71UkfnqhYXDYH566qy47CnJDgvs8u');
 const ipfsBytes3 = ipfsHash.getBytes32FromIpfsHash('QmcaHpwn3bs9DaeLsrk9ZvVxVcKTPXVWiU1XdrGNW9hpi3');
 
+const PUBLISHED_STATUS = 2;
+
 contract('Content', function(accounts) {
 
   let content;
@@ -238,7 +240,11 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await pushRevision(spaceKey, ipfsBytes1, 0);
+    let receipt = await pushRevision(spaceKey, ipfsBytes1, 0);
+    let timestamp = await getBlockTimestamp(receipt)
+
+    let revision = await getRevision(spaceKey, 1);
+    verifySavedRevision(revision, ipfsBytes1, 0, accounts[0], timestamp, PUBLISHED_STATUS);
   });
 
   it('emits a RevisionPublished event when owner pushes revision', async () => {
@@ -329,9 +335,16 @@ contract('Content', function(accounts) {
     
     await content.createContentSpace(spaceKey);
 
-    await pushRevision(spaceKey, ipfsBytes1, 0);
-    await pushRevision(spaceKey, ipfsBytes2, 1);
-    await pushRevision(spaceKey, ipfsBytes3, 2);
+    let receipt1 = await pushRevision(spaceKey, ipfsBytes1, 0);
+    let receipt2 = await pushRevision(spaceKey, ipfsBytes2, 1);
+    let receipt3 = await pushRevision(spaceKey, ipfsBytes3, 2);
+
+    let revisions = await getRevisions(spaceKey);
+
+    verifySavedRevision(revisions[0], ipfsBytes1, 0, accounts[0], await getBlockTimestamp(receipt1), 2, 1);
+    verifySavedRevision(revisions[1], ipfsBytes2, 1, accounts[0], await getBlockTimestamp(receipt2), 2, 2);
+    verifySavedRevision(revisions[2], ipfsBytes3, 2, accounts[0], await getBlockTimestamp(receipt3), 2, 3);
+
   });
 
   it('should not allow a revision to be pushed for a non existent space', async () => {
@@ -812,6 +825,50 @@ contract('Content', function(accounts) {
     return await content.getNonce.call(addr);
   }
 
+  function revisionNormalise(revisions, index) {
+    let revision = [];
+
+    revision[0] = revisions['ids'][index];
+    revision[1] = revisions['hashes'][index];
+    revision[2] = revisions['parents'][index];
+    revision[3] = revisions['authors'][index];
+    revision[4] = revisions['timestamps'][index];
+    revision[5] = revisions['states'][index];
+
+    return revision;
+  }
+
+  async function getRevision(spaceId, revisionId) {
+    return await content.getRevision.call(spaceId, revisionId);
+  }
+
+  async function getRevisions(spaceId) {
+    let normalized = [];
+    let revisions = await content.getRevisions.call(spaceId);
+
+    for(let i = 0; i < revisions[0].length; i++) {
+      normalized.push(revisionNormalise(revisions, i));
+    }
+
+    return normalized;
+  }
+
+  function verifySavedRevision(revision, hash, parent, author, timestamp, state, revisionId) {
+
+    let offset = 0;
+
+    if (revisionId) { 
+      offset = 1;
+      assert.equal(revision[0], revisionId);
+    }
+
+    assert.equal(revision[offset + 0], hash);
+    assert.equal(revision[offset + 1], parent);
+    assert.equal(revision[offset + 2], author);
+    assert.equal(revision[offset + 3], timestamp);
+    assert.equal(revision[offset + 4], state);
+  }
+
 });
 
 function padToBytes32(n) {
@@ -827,4 +884,10 @@ function numToBytes32(num) {
 
 function addressToBytes32(address) {
   return padToBytes32(address.substring(2).toLowerCase());
+}
+
+async function getBlockTimestamp(txReceipt) {
+  let block = await web3.eth.getBlock(txReceipt.receipt.blockHash);
+
+  return block.timestamp;
 }

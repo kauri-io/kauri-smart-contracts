@@ -38,6 +38,68 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
     event RevisionApproved(bytes32 _spaceId, uint _revisionId, bytes32 _hash, uint _parentRevision, address _author, address _approver);
     event RevisionRejected(bytes32 _spaceId, uint _revisionId, bytes32 _hash, uint _parentRevision, address _author, address _rejector);
 
+    ////////////////////////////////////////////////////
+    // External Getter (View) Functions
+    ////////////////////////////////////////////////////
+    function getRevisions(
+        bytes32 _spaceId
+    ) 
+        external
+        view
+        returns(
+            uint[] memory ids, 
+            bytes32[] memory hashes, 
+            uint[] memory parents,
+            address[] memory authors,  
+            uint[] memory timestamps, 
+            uint8[] memory states
+        )
+    {
+        uint revisionCount = storageContract.getUintValue(getRevisionCountKey(_spaceId));
+
+        ids = new uint[](revisionCount);
+        hashes = new bytes32[](revisionCount);
+        parents = new uint[](revisionCount);
+        authors = new address[](revisionCount);
+        timestamps = new uint[](revisionCount);
+        states = new uint8[](revisionCount);
+
+        for (uint i = 0; i < revisionCount; i++) {
+            uint id = i + 1;
+            ids[i] = id;
+            hashes[i] = storageContract.getBytes32Value(getRevisionHashKey(_spaceId, id));
+            parents[i] = storageContract.getUintValue(getRevisionParentKey(_spaceId, id));
+            authors[i] = storageContract.getAddressValue(getRevisionAuthorKey(_spaceId, id));
+            timestamps[i] = storageContract.getUintValue(getRevisionTimestampKey(_spaceId, id));
+            states[i] = uint8(storageContract.getUintValue(getRevisionStateKey(_spaceId, id)));
+        }
+
+        return (ids, hashes, parents, authors, timestamps, states);
+
+    }
+
+    function getRevision(
+        bytes32 _spaceId,
+        uint _revisionId
+    ) 
+        external
+        view
+        returns(
+            bytes32, 
+            uint, 
+            address, 
+            uint, 
+            uint8
+        )
+    {
+        return (
+            storageContract.getBytes32Value(getRevisionHashKey(_spaceId, _revisionId)),
+            storageContract.getUintValue(getRevisionParentKey(_spaceId, _revisionId)),
+            storageContract.getAddressValue(getRevisionAuthorKey(_spaceId, _revisionId)),
+            storageContract.getUintValue(getRevisionTimestampKey(_spaceId, _revisionId)),
+            uint8(storageContract.getUintValue(getRevisionStateKey(_spaceId, _revisionId)))
+        );
+    }
 
     ////////////////////////////////////////////////////
     // Internal Functions
@@ -275,9 +337,9 @@ contract ContentLogic is ContentI, UsingExternalStorage, GroupClient
         storageContract.putAddressValue(getRevisionAuthorKey(_spaceId, _revisionId), _author);
         storageContract.putUintValue(getRevisionParentKey(_spaceId, _revisionId), _parentRevision);
         updateRevisionState(_spaceId, _revisionId, _state);
-        storageContract.putUintValue(getRevisionTimestampKey(_spaceId, _revisionId), now);
+        storageContract.putUintValue(getRevisionTimestampKey(_spaceId, _revisionId), block.timestamp);
 
-        return now;
+        return block.timestamp;
     }
 
     function updateRevisionState( 
