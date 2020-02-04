@@ -1,6 +1,4 @@
 let KauriCheckpoint = artifacts.require('KauriCheckpoint');
-let KauriReadOperations = artifacts.require('KauriReadOperations');
-let KauriWriteOperations = artifacts.require('KauriWriteOperations');
 let Storage = artifacts.require('Storage');
 let OnlyOwnerAdminController = artifacts.require('OnlyOwnerAdminController');
 let Delay = require('./helpers/delay');
@@ -9,10 +7,6 @@ let delay = Delay.delay;
 async function performMigration(deployer, network, accounts) {
   Delay.init(deployer.chain.network_id);
 
-  await deployer.deploy(KauriReadOperations)
-  await deployer.link(KauriReadOperations, KauriCheckpoint)
-  await deployer.deploy(KauriWriteOperations)
-  await deployer.link(KauriWriteOperations, KauriCheckpoint)
   await deployer.deploy(KauriCheckpoint);
   let deployedStorage = await Storage.deployed()
   console.log("Adding Storage write permission for KauriCheckpoint...");

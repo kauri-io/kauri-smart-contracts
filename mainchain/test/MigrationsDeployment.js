@@ -6,7 +6,6 @@ const fromAscii = require('./helpers/ascii').fromAscii;
 const core = require('./helpers/core');
 
 var KauriCheckpoint = artifacts.require('KauriCheckpoint.sol');
-var Community = artifacts.require('Community.sol');
 
 contract('MigrationsDeployment', function(accounts) {
 
