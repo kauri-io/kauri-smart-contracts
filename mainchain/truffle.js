@@ -36,6 +36,12 @@ module.exports = {
       gas: 4500000,
       gasPrice: 21000000000
     },
+    mainnet: {
+      provider: new HDWalletProvider(mnemonic, 'https://mainnet.infura.io'),
+      network_id: '1',
+      gas: 4500000,
+      gasPrice: 11000000000
+    },
     coverage: {
       host: 'localhost',
       network_id: '*',

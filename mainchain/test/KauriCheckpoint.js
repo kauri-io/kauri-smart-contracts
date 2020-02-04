@@ -6,7 +6,7 @@ const assertRevert = require('./helpers/assertRevert').assertRevert;
 const getEvents = require('./helpers/getEvents').getEvents;
 const checkpoint = require('./helpers/checkpoint');
 
-contract('Checkpoint', function(accounts) {
+contract('KauriCheckpoint', function(accounts) {
   it('should allow anyone to add a checkpoint if sig signed by checkpoint account', core.redeploy(accounts, async (underTest) => {
     await core.checkpointArticles(underTest, accounts);
   }));
