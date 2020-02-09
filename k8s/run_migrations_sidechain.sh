@@ -1,3 +1,8 @@
+if [ "${SKIP_SIDECHAIN}" == "true" ]; then
+  echo "Skipping sidechain deployment."
+  exit 0
+fi
+
 if [ "${TARGET_ENV}" == "" ]; then
   echo "Environment not set, please run env_setup script in ops folder"
   exit 1
