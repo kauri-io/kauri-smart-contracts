@@ -1,5 +1,10 @@
 if [ "${SKIP_SIDECHAIN}" == "true" ]; then
   echo "Skipping sidechain deployment."
+  docker run -d --name kauri-contract-abis ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+  mkdir build
+  docker cp kauri-contract-abis:/project/sidechain/contracts build/
+  docker stop kauri-contract-abis
+  docker rm kauri-contract-abis
   exit 0
 fi
 
