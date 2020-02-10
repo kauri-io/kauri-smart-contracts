@@ -1,8 +1,3 @@
-if [ "${SKIP_MAINCHAIN}" == "true" ]; then
-  echo "Skipping mainchain deployment."
-  exit 0
-fi
-
 if [ "${TARGET_ENV}" == "" ]; then
   echo "Environment not set, please run env_setup script in ops folder"
   exit 1
@@ -20,6 +15,17 @@ else
 fi
 
 cd mainchain
+
+if [ "${SKIP_MAINCHAIN}" == "true" ]; then
+  echo "Skipping mainchain deployment."
+  docker run -d --name kauri-contract-abis ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+  mkdir build
+  docker cp kauri-contract-abis:/project/contracts build/
+  docker stop kauri-contract-abis
+  docker rm kauri-contract-abis
+  exit 0
+fi
+
 npm install
 
 if [ "${MIGRATION_MODE}" == "reset" ]; then
