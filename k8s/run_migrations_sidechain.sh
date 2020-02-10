@@ -15,6 +15,17 @@ else
 fi
 
 cd sidechain
+
+if [ "${SKIP_SIDECHAIN}" == "true" ]; then
+  echo "Skipping sidechain deployment."
+  docker run -d --name kauri-contract-abis ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+  mkdir build
+  docker cp kauri-contract-abis:/project/sidechain/contracts build/
+  docker stop kauri-contract-abis
+  docker rm kauri-contract-abis
+  exit 0
+fi
+
 npm install
 
 if [ "${MIGRATION_MODE}" == "reset" ]; then
@@ -26,7 +37,7 @@ else
     docker cp kauri-contract-abis:/project/sidechain/contracts build/
     docker stop kauri-contract-abis
     docker rm kauri-contract-abis
-    if [ -f build/contracts/Group.json ]; then
+    if [ -f build/contracts/GroupConnector.json ]; then
       migrationParameters="-f 3"
     else
       echo Unable to upgrade as Group.json not found, deploying all

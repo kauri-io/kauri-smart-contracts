@@ -132,10 +132,12 @@ jobs:
     - bash ./k8s/run_migrations_mainchain.sh
     - bash ./k8s/run_migrations_sidechain.sh
     - bash ./docker/build-kauri-abis.sh $SMART_CONTRACTS_VERSION
-    - bash ./docker/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
+    - bash ./k8s/redeploy-k8s.sh $SMART_CONTRACTS_VERSION
     - kubectl delete pods -l app=web3-auth
     - sleep 30
     - kubectl delete pods -l app=monolith
+    - sleep 30
+    - kubectl delete pods -l app=eventeum
   - stage: deploy-dev2
     if: "(NOT type IN (pull_request) AND (branch = dev2))"
     install:
@@ -158,6 +160,8 @@ jobs:
     - kubectl delete pods -l app=web3-auth
     - sleep 30
     - kubectl delete pods -l app=monolith
+    - sleep 30
+    - kubectl delete pods -l app=eventeum
   - stage: deploy-dev
     if: "(NOT env(AUTHOR_NAME) =~ ^Travis AND (NOT type IN (pull_request)) AND (branch
       = development))"
@@ -180,3 +184,5 @@ jobs:
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=web3-auth; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30; fi
     - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=monolith; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then sleep 30; fi
+    - if [ "$AUTHOR_NAME" != "Travis CI User" ]; then kubectl delete pods -l app=eventeum; fi

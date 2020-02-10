@@ -8,19 +8,30 @@ if [ "${TARGET_ENV}" == "dev" ]; then
 elif [ "${TARGET_ENV}" == "dev2" ]; then
   network="rinkeby"
 elif [ "${TARGET_ENV}" == "uat" ]; then
-  network="rinkeby"
+  network="mainnet"
 else
   echo "Unknown environment ${TARGET_ENV}"
   exit 1
 fi
 
 cd mainchain
+
+if [ "${SKIP_MAINCHAIN}" == "true" ]; then
+  echo "Skipping mainchain deployment."
+  docker run -d --name kauri-contract-abis ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
+  mkdir build
+  docker cp kauri-contract-abis:/project/contracts build/
+  docker stop kauri-contract-abis
+  docker rm kauri-contract-abis
+  exit 0
+fi
+
 npm install
 
 if [ "${MIGRATION_MODE}" == "reset" ]; then
   migrationParameters="--reset"
 else
-    echo Upgrading KauriCore
+    echo Upgrading KauriCheckpoint
     docker run -d --name kauri-contract-abis ${REGISTRY_URL}/${GOOGLE_PROJECT_ID}/kauri-contract-abis:latest-${TARGET_ENV}
     mkdir build
     docker cp kauri-contract-abis:/project/contracts build/
@@ -30,17 +41,12 @@ else
 fi
 
 output=$(truffle migrate --network ${network} $migrationParameters | tee /dev/tty)
-CONTRACT_ADDRESS=$(echo "$output" | grep '^KauriCore address:' | sed 's/KauriCore address: //' | sed $'s@\r@@g')
-MODERATOR_CONTRACT_ADDRESS=$(echo "$output" | grep '^TopicModerator address:' | sed 's/TopicModerator address: //' | sed $'s@\r@@g')
-WALLET_CONTRACT_ADDRESS=$(echo "$output" | grep '^Wallet address:' | sed 's/Wallet address: //' | sed $'s@\r@@g')
+CHECKPOINT_CONTRACT_ADDRESS=$(echo "$output" | grep '^KauriCheckpoint address:' | sed 's/KauriCheckpoint address: //' | sed $'s@\r@@g')
 STORAGE_CONTRACT_ADDRESS=$(echo "$output" | grep '^Storage address:' | sed 's/Storage address: //' | sed $'s@\r@@g')
-COMMUNITY_CONTRACT_ADDRESS=$(echo "$output" | grep '^Community address:' | sed 's/Community address: //' | sed $'s@\r@@g')
-echo KuariCore Contract Address: $CONTRACT_ADDRESS
-echo Wallet Contract Address: $WALLET_CONTRACT_ADDRESS
+echo KauriCheckpoint Contract Address: $CHECKPOINT_CONTRACT_ADDRESS
 echo Storage Contract Address: $STORAGE_CONTRACT_ADDRESS
-echo Community Contract Address: $COMMUNITY_CONTRACT_ADDRESS
 
-if [ "${CONTRACT_ADDRESS}" == "" ] || [ "${COMMUNITY_CONTRACT_ADDRESS}" == "" ] || [ "${WALLET_CONTRACT_ADDRESS}" == "" ] || [ "${STORAGE_CONTRACT_ADDRESS}" == "" ]; then
+if [ "${CHECKPOINT_CONTRACT_ADDRESS}" == "" ] || [ "${STORAGE_CONTRACT_ADDRESS}" == "" ]; then
   echo "Migration failed"
   exit 1
 fi
@@ -51,10 +57,7 @@ fi
 
 kubectl create secret generic smart-contract-addresses \
                                                 --namespace=${TARGET_ENV} \
-                                                --from-literal=KuariCoreContractAddress=$CONTRACT_ADDRESS \
-                                                --from-literal=ModeratorContractAddress=$MODERATOR_CONTRACT_ADDRESS \
-                                                --from-literal=WalletContractAddress=$WALLET_CONTRACT_ADDRESS \
-                                                --from-literal=StorageContractAddress=$STORAGE_CONTRACT_ADDRESS \
-                                                --from-literal=CommunityContractAddress=$COMMUNITY_CONTRACT_ADDRESS
+                                                --from-literal=KauriCheckpointContractAddress=$CHECKPOINT_CONTRACT_ADDRESS \
+                                                --from-literal=StorageContractAddress=$STORAGE_CONTRACT_ADDRESS
 
 cd ..
